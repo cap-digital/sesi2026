@@ -9,7 +9,7 @@ import {
   RankCard,
   VolumeKpis,
 } from "./blocks";
-import { FunnelBars, GroupedBars, SplitDonut, type Series } from "./charts";
+import { FunnelBars, SplitDonut, StackedBars, type Series } from "./charts";
 import {
   Card,
   ChartCard,
@@ -196,7 +196,16 @@ function Demographics({ rows }: { rows: Row[] }) {
             />
           }
         >
-          <GroupedBars data={ages} series={ageSeries} format={fmtInt} />
+          <StackedBars
+            data={ages}
+            series={ageSeries}
+            format={fmtInt}
+            labelFormat={fmtCompact}
+            xKey="label"
+            xFormat={(v) => v}
+            interval={0}
+            height={250}
+          />
         </ChartCard>
       </div>
     </section>
@@ -399,7 +408,8 @@ export function PlatformView({ def }: { def: PlatformDef }) {
           )}
         </div>
 
-        {def.id === "meta" && <Demographics rows={rows} />}
+        {/* Meta e TikTok entregam quebra por idade/gênero */}
+        <Demographics rows={rows} />
 
         <section>
           <SectionTitle

@@ -53,8 +53,32 @@ mistura objetivos (o bloco "Taxas da plataforma"), isso está indicado no cartã
 | Views | `video_trueview_views` (YouTube) / thruplay (Meta) | CPV |
 | Performance Max | Cliques | CPC |
 
+O objetivo sai do nome da campanha. TikTok e Rede Display são compra por
+impressão: quando o nome não traz palavra-chave, valem como Alcance.
+
+**Colunas por plataforma** — cada origem nomeia as coisas do seu jeito;
+`lib/normalize.ts` converte tudo para um formato único.
+
+| | Meta | Rede Display | YouTube | TikTok |
+|---|---|---|---|---|
+| criativo | `thumbnail_url` | `ad_image_ad_image_url` | derivado da URL do vídeo | `video_thumbnail_url` |
+| visualizações | thruplay | — | `video_trueview_views` | `play_duration_2s` |
+| quartis | `video_p25…p100` | — | taxas × impressões | `play_first_quartile`, `play_midpoint`, `play_third_quartile`, `play_over` |
+| idade | `18-24` | — | — | `AGE_18_24` |
+| gênero | `male` | — | — | `MALE` |
+
+Idade e gênero são normalizados para o formato do Meta, e URLs de criativo em
+`http` sobem para `https` (o TikTok entrega em `http`, que a página bloquearia
+por conteúdo misto).
+
 **Retenção de vídeo** — o funil começa em "25% assistido", porque thruplay e
 trueview são contados por outra régua e podem ficar abaixo do primeiro quartil.
+
+**Rótulos de dados** — os gráficos rotulam o total acima da barra e o valor
+dentro de cada segmento, sempre em formato curto. O rótulo só é desenhado
+quando cabe: o componente mede a largura real do container, calcula o espaço
+por barra e rareia ou omite quando dois rótulos se tocariam. Dentro da barra a
+cor do texto é escolhida por contraste sobre a cor da série.
 
 **Origem instável** — as funções Supabase respondem entre 3 s e mais de 70 s e às
 vezes devolvem HTTP 500. O proxy em `app/api/[campaign]/route.ts` mantém a última

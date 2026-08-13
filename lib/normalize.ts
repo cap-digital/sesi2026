@@ -23,7 +23,41 @@ function str(v: unknown): string | null {
   return s ? s : null;
 }
 
-/** Primeiro alias presente na linha (as bases de TikTok/PMAX ainda não estão populadas). */
+/** URLs de criativo em http quebram por conteúdo misto numa página https */
+function secureUrl(v: string | null): string | null {
+  return v ? v.replace(/^http:\/\//i, "https://") : v;
+}
+
+/**
+ * Gênero: o Meta entrega "male"/"female", o TikTok "MALE"/"FEMALE".
+ * Normaliza para uma chave só, para os gráficos somarem as duas bases.
+ */
+function normGender(v: unknown): string | null {
+  const s = str(v)?.toLowerCase();
+  if (!s) return null;
+  if (s.startsWith("f")) return "female";
+  if (s.startsWith("m")) return "male";
+  return "unknown";
+}
+
+/**
+ * Faixa etária: o Meta entrega "18-24"/"65+", o TikTok "AGE_18_24"/"AGE_55_100".
+ * Normaliza para o formato do Meta.
+ */
+function normAge(v: unknown): string | null {
+  const s = str(v);
+  if (!s) return null;
+  const m = s.match(/(\d+)\D+(\d+)/);
+  if (m) {
+    const [, from, to] = m;
+    return Number(to) >= 65 ? `${from}+` : `${from}-${to}`;
+  }
+  if (/^\d+\+$/.test(s)) return s;
+  if (/unknown|desconhec/i.test(s)) return "Não informado";
+  return s;
+}
+
+/** Primeiro alias presente na linha — as bases variam de nome entre plataformas. */
 function pick(row: Raw, aliases: string[]): unknown {
   for (const a of aliases) {
     if (a in row && row[a] !== "" && row[a] !== null && row[a] !== undefined) {
@@ -59,6 +93,8 @@ function detectObjective(campaign: string, platform: Platform): Objective {
   if (/TR[ÁA]FEGO|TRAFFIC|LINK.?CLICK/.test(c)) return "Tráfego";
   if (/VIEW|VISUALIZA|VIDEO/.test(c)) return "Views";
   if (/PMAX|PERFORMANCE ?MAX/.test(c)) return "Performance Max";
+  // TikTok e Display são comprados por impressão; sem palavra-chave, alcance
+  if (platform === "tiktok" || platform === "display") return "Alcance";
   return "Outros";
 }
 
@@ -101,14 +137,14 @@ function base(row: Raw, platform: Platform): Row {
 
 function fromMeta(row: Raw): Row {
   const r = base(row, "meta");
-  r.creative = pickStr(row, ["thumbnail_url", "image_url"]);
+  r.creative = secureUrl(pickStr(row, ["thumbnail_url", "image_url"]));
   r.permalink = pickStr(row, [
     "instagram_permalink_url",
     "permalink_url",
     "preview_url",
   ]);
-  r.age = pickStr(row, ["age"]);
-  r.gender = pickStr(row, ["gender"]);
+  r.age = normAge(row.age);
+  r.gender = normGender(row.gender);
   r.linkClicks = pickNum(row, ["actions_link_click"]);
   r.engagement = pickNum(row, ["actions_post_engagement"]);
   r.reactions = pickNum(row, ["actions_post_reaction"]);
@@ -125,7 +161,7 @@ function fromMeta(row: Raw): Row {
 
 function fromDisplay(row: Raw): Row {
   const r = base(row, "display");
-  r.creative = pickStr(row, ["ad_image_ad_image_url", "image_url"]);
+  r.creative = secureUrl(pickStr(row, ["ad_image_ad_image_url", "image_url"]));
   r.linkClicks = r.clicks;
   return r;
 }
@@ -175,18 +211,26 @@ function fromYoutube(row: Raw): Row {
   return r;
 }
 
-/** Base do TikTok ainda vazia — mapeamento por aliases prováveis. */
 function fromTiktok(row: Raw): Row {
   const r = base(row, "tiktok");
-  r.creative = pickStr(row, [
-    "thumbnail_url",
-    "image_url",
-    "video_thumbnail_url",
-    "creative_thumbnail_url",
-  ]);
+  r.creative = secureUrl(
+    pickStr(row, [
+      "video_thumbnail_url",
+      "thumbnail_url",
+      "image_url",
+      "creative_thumbnail_url",
+    ])
+  );
   r.videoUrl = pickStr(row, ["video_url", "preview_url", "URL Video"]);
-  if (!r.creative) r.creative = youtubeThumb(r.videoUrl);
-  r.views = pickNum(row, ["video_views", "video_play_actions", "views"]);
+  r.age = normAge(row.age);
+  r.gender = normGender(row.gender);
+  // o TikTok não entrega "views": a reprodução de 2s é o proxy padrão
+  r.views = pickNum(row, [
+    "video_views",
+    "video_play_actions",
+    "views",
+    "play_duration_2s",
+  ]);
   r.engagement = pickNum(row, [
     "engagements",
     "total_engagement",
@@ -196,22 +240,24 @@ function fromTiktok(row: Raw): Row {
   r.comments = pickNum(row, ["comments"]);
   r.shares = pickNum(row, ["shares"]);
   r.linkClicks = pickNum(row, ["actions_link_click", "clicks"]);
-  r.p25 = pickNum(row, ["video_views_p25", "video_watched_p25"]);
-  r.p50 = pickNum(row, ["video_views_p50", "video_watched_p50"]);
-  r.p75 = pickNum(row, ["video_views_p75", "video_watched_p75"]);
-  r.p100 = pickNum(row, ["video_views_p100", "video_watched_p100"]);
+  r.p25 = pickNum(row, ["play_first_quartile", "video_views_p25"]);
+  r.p50 = pickNum(row, ["play_midpoint", "video_views_p50"]);
+  r.p75 = pickNum(row, ["play_third_quartile", "video_views_p75"]);
+  r.p100 = pickNum(row, ["play_over", "video_views_p100"]);
   return r;
 }
 
 /** Base do PMAX (Jequié) ainda vazia — mapeamento por aliases prováveis. */
 function fromPmax(row: Raw): Row {
   const r = base(row, "pmax");
-  r.creative = pickStr(row, [
-    "ad_image_ad_image_url",
-    "image_url",
-    "asset_image_url",
-    "thumbnail_url",
-  ]);
+  r.creative = secureUrl(
+    pickStr(row, [
+      "ad_image_ad_image_url",
+      "image_url",
+      "asset_image_url",
+      "thumbnail_url",
+    ])
+  );
   r.videoUrl = pickStr(row, ["URL Video", "video_url"]);
   if (!r.creative) r.creative = youtubeThumb(r.videoUrl);
   r.engagement = pickNum(row, ["engagements", "interactions"]);

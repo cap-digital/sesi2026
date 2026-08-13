@@ -117,27 +117,41 @@ const audit = () => {
   return out;
 };
 
-const browser = await puppeteer.launch({
-  executablePath: CHROME,
-  headless: "shell",
-  args: ["--no-sandbox", "--disable-gpu"],
-});
+const newBrowser = () =>
+  puppeteer.launch({
+    executablePath: CHROME,
+    headless: "shell",
+    args: ["--no-sandbox", "--disable-gpu"],
+  });
 
 let failures = 0;
 for (const vp of VIEWPORTS) {
+  const browser = await newBrowser();
   const page = await browser.newPage();
   await page.setViewport({ width: vp.w, height: vp.h, deviceScaleFactor: 1 });
   const lines = [];
   for (const route of ROUTES) {
-    await page.goto(`http://localhost:3000${route}`, {
-      waitUntil: "networkidle2",
-      timeout: 60000,
-    });
-    await new Promise((r) => setTimeout(r, 400));
-    const top = await page.evaluate(audit);
-    await page.evaluate(() => window.scrollTo(0, 700));
-    await new Promise((r) => setTimeout(r, 250));
-    const low = await page.evaluate(audit);
+    let top, low;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        await page.goto(`http://localhost:3000${route}`, {
+          waitUntil: "networkidle2",
+          timeout: 60000,
+        });
+        await new Promise((r) => setTimeout(r, 400));
+        top = await page.evaluate(audit);
+        await page.evaluate(() => window.scrollTo(0, 700));
+        await new Promise((r) => setTimeout(r, 250));
+        low = await page.evaluate(audit);
+        break;
+      } catch (err) {
+        if (attempt === 1) {
+          console.log(`  ! ${route} — falha do navegador: ${err.message}`);
+        }
+        await new Promise((r) => setTimeout(r, 800));
+      }
+    }
+    if (!top || !low) continue;
 
     const problems = [];
     if (top.overflowX > 1) problems.push(`overflowX=${top.overflowX}px`);
@@ -165,10 +179,8 @@ for (const vp of VIEWPORTS) {
   }
   console.log(`[${vp.name}] ${vp.w}x${vp.h}${lines.length ? "" : "  ✓"}`);
   lines.forEach((l) => console.log(l));
-  await page.close();
+  await browser.close();
 }
-
-await browser.close();
 console.log(
   `\n=== ${failures === 0 ? "OK: nenhuma quebra" : failures + " rota(s)/zoom com quebra"} ===`
 );

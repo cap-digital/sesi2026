@@ -48,6 +48,17 @@ export function fmtCompact(n: number) {
   return int.format(n || 0);
 }
 
+/**
+ * Dinheiro em versão curta, para rótulo desenhado dentro ou acima da barra:
+ * quanto menor a etiqueta, mais rótulos cabem sem colidir.
+ */
+export function fmtBRLLabel(n: number) {
+  const v = Math.abs(n || 0);
+  if (v >= 1000) return `R$ ${dec1.format(n / 1000)}k`;
+  if (v >= 10) return `R$ ${int.format(n)}`;
+  return brlCompactish.format(n || 0);
+}
+
 export function fmtBRLCompact(n: number) {
   const v = Math.abs(n || 0);
   if (v >= 1_000_000) return `R$ ${dec1.format(n / 1_000_000)}M`;

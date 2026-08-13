@@ -15,7 +15,7 @@ import {
   Segmented,
   StatGrid,
 } from "./ui";
-import { DailyStackedBars, RankBars, type Series } from "./charts";
+import { StackedBars, RankBars, type Series } from "./charts";
 import {
   OBJECTIVE_METRIC,
   byObjective,
@@ -31,6 +31,7 @@ import {
   MONTH_NAMES,
   fmtBRL,
   fmtBRLCompact,
+  fmtBRLLabel,
   fmtCompact,
   fmtCost,
   fmtDate,
@@ -165,13 +166,34 @@ type MetricId = "investment" | "impressions" | "clicks" | "engagement" | "views"
 
 const METRIC_DEFS: Record<
   MetricId,
-  { label: string; format: (n: number) => string }
+  {
+    label: string;
+    format: (n: number) => string;
+    /** versão curta, para o rótulo desenhado sobre a barra */
+    labelFormat: (n: number) => string;
+  }
 > = {
-  investment: { label: "Investimento", format: fmtBRLCompact },
-  impressions: { label: "Impressões", format: fmtCompact },
-  clicks: { label: "Cliques", format: fmtCompact },
-  engagement: { label: "Engajamento", format: fmtCompact },
-  views: { label: "Visualizações", format: fmtCompact },
+  investment: {
+    label: "Investimento",
+    format: fmtBRLCompact,
+    labelFormat: fmtBRLLabel,
+  },
+  impressions: {
+    label: "Impressões",
+    format: fmtCompact,
+    labelFormat: fmtCompact,
+  },
+  clicks: { label: "Cliques", format: fmtCompact, labelFormat: fmtCompact },
+  engagement: {
+    label: "Engajamento",
+    format: fmtCompact,
+    labelFormat: fmtCompact,
+  },
+  views: {
+    label: "Visualizações",
+    format: fmtCompact,
+    labelFormat: fmtCompact,
+  },
 };
 
 export function DailyMetricCard({
@@ -274,7 +296,12 @@ export function DailyMetricCard({
           description="Escolha outro intervalo de datas para ver a evolução diária."
         />
       ) : (
-        <DailyStackedBars data={data} series={usedSeries} format={def.format} />
+        <StackedBars
+          data={data}
+          series={usedSeries}
+          format={def.format}
+          labelFormat={def.labelFormat}
+        />
       )}
     </ChartCard>
   );
