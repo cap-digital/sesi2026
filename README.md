@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Painéis de Mídia — SESI Bahia
 
-## Getting Started
+Dois dashboards de performance de mídia, com identidade visual própria, sobre uma
+home institucional SESI.
 
-First, run the development server:
+| Rota | Campanha | Plataformas | Período |
+|---|---|---|---|
+| `/robotica` | Olimpíada Brasileira de Robótica 2026 | Meta Ads, Rede Display, YouTube, TikTok | 11/08 – 31/08/2026 |
+| `/jequie` | Inauguração Escola SESI Jequié | Meta Ads, Google PMAX | 01/08 – 30/09/2026 |
+
+## Rodando
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
+npm run build && npm run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estrutura
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+app/
+  page.tsx                 home institucional (identidade SESI)
+  api/[campaign]/route.ts  proxy das funções Supabase, com cache e retry
+  robotica/                sidebar flutuante · overview, metas, 4 plataformas × (visão geral | criativos)
+  jequie/                  topbar em pílula · visão geral, plataformas, criativos, metas
+lib/
+  campaigns.ts             definição das campanhas, plataformas e metas contratadas
+  normalize.ts             normaliza as respostas das duas APIs num formato único
+  metrics.ts               somas, taxas e custos por objetivo
+  goals.ts                 progresso, ritmo esperado e projeção de cada meta
+components/                shell, filtros, gráficos, criativos e blocos reutilizáveis
+scripts/audit-layout.mjs   auditoria de layout em 10 níveis de zoom
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Decisões que valem saber
 
-## Learn More
+**Investimento** — todos os valores monetários usam a coluna `Investimento`. A
+coluna `spend` não é usada em nenhum cálculo.
 
-To learn more about Next.js, take a look at the following resources:
+**Custos por objetivo** — CPM, CPC, CPE e CPV são sempre calculados dentro do
+próprio objetivo: o CPE usa o engajamento e o investimento apenas das campanhas
+de engajamento, o CPM apenas das de alcance, e assim por diante. Onde uma taxa
+mistura objetivos (o bloco "Taxas da plataforma"), isso está indicado no cartão.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Métrica de cada objetivo**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Objetivo | Métrica-alvo | Custo |
+|---|---|---|
+| Alcance | Impressões | CPM |
+| Engajamento | `actions_post_engagement` | CPE |
+| Tráfego | Cliques | CPC |
+| Views | `video_trueview_views` (YouTube) / thruplay (Meta) | CPV |
+| Performance Max | Cliques | CPC |
 
-## Deploy on Vercel
+**Retenção de vídeo** — o funil começa em "25% assistido", porque thruplay e
+trueview são contados por outra régua e podem ficar abaixo do primeiro quartil.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Origem instável** — as funções Supabase respondem entre 3 s e mais de 70 s e às
+vezes devolvem HTTP 500. O proxy em `app/api/[campaign]/route.ts` mantém a última
+resposta boa em memória, serve na hora e revalida em background; se a origem
+falhar, o painel mostra o último dado conhecido com um aviso em vez de quebrar.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**TikTok e Jequié** — as bases ainda não retornam linhas. As metas estão
+configuradas e o mapeamento cobre os nomes de coluna prováveis; as telas exibem
+estado de espera e populam sozinhas quando a veiculação começar.
+
+## Layout
+
+Baseline 1366×768. `scripts/audit-layout.mjs` percorre as 16 rotas em dez
+viewports (equivalentes a zoom de 67% a 250% e mobile) verificando estouro
+horizontal, colisão entre blocos, barras flutuantes cortadas e texto abaixo de
+10 px:
+
+```bash
+npm run start          # em outro terminal
+node scripts/audit-layout.mjs
+```

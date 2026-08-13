@@ -3,25 +3,135 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* SESI institucional — usado na home */
+  --page: #eef4fb;
+  --surface: #ffffff;
+  --surface-2: #f6f9fd;
+  --brand: #00427e;
+  --brand-deep: #002a52;
+  --accent: #3f8c2d;
+  --ink: #0f2033;
+  --ink-2: #435668;
+  --muted: #6b7c8d;
+  --grid: #e0e8f2;
+  --line: rgba(15, 32, 51, 0.1);
+  --shell: 0, 66, 126;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Olimpíada de Robótica — creme, marrom-vinho e âmbar (identidade OBR) */
+.theme-robotica {
+  --page: #faf1dc;
+  --surface: #fffdf7;
+  --surface-2: #f8eeda;
+  --brand: #8f2f1a;
+  --brand-deep: #5e2116;
+  --accent: #e09a3c;
+  --cream: #f8e9c9;
+  --ink: #4a1c12;
+  --ink-2: #7a4536;
+  --muted: #8a6449;
+  --grid: #ecdcbe;
+  --line: rgba(74, 28, 18, 0.13);
+  --shell: 143, 47, 26;
+}
+
+/* Inauguração Jequié — azul profundo com verde-limão */
+.theme-jequie {
+  --page: #eef2ff;
+  --surface: #ffffff;
+  --surface-2: #f5f8ff;
+  --brand: #1b2a8c;
+  --brand-deep: #101a5c;
+  --accent: #5f9a1e;
+  --accent-bright: #8dc63f;
+  --ink: #101a3d;
+  --ink-2: #454f77;
+  --muted: #6a7599;
+  --grid: #e1e8f7;
+  --line: rgba(16, 26, 61, 0.1);
+  --shell: 27, 42, 140;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+/* números tabulares só onde alinham em coluna */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* trilha do circuito — textura de fundo do tema robótica (sem mascote) */
+.circuit {
+  background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(255, 255, 255, 0.28) 1.4px,
+      transparent 0
+    ),
+    linear-gradient(
+      90deg,
+      transparent 0 46px,
+      rgba(255, 255, 255, 0.14) 46px 47px,
+      transparent 47px
+    ),
+    linear-gradient(
+      0deg,
+      transparent 0 46px,
+      rgba(255, 255, 255, 0.1) 46px 47px,
+      transparent 47px
+    );
+  background-size: 47px 47px, 47px 47px, 47px 47px;
+}
+
+.dots {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(255, 255, 255, 0.22) 1.3px,
+    transparent 0
+  );
+  background-size: 22px 22px;
+}
+
+/* barras de rolagem discretas */
+.scroll-thin::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--grid);
+  border-radius: 999px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* recharts: tira o outline padrão e deixa a grade discreta */
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none;
+}
+.recharts-cartesian-axis-line,
+.recharts-cartesian-axis-tick-line {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
