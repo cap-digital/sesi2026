@@ -48,15 +48,15 @@ export function DateRangeBar({
     setRange,
     presetId,
     applyPreset,
-    campaign,
+    window,
     today,
     refresh,
     refreshing,
     stale,
   } = useDash();
 
-  const min = campaign.window.start;
-  const max = campaign.window.end;
+  const min = window.start;
+  const max = window.end;
 
   const setStart = (v: string) => {
     const start = clamp(v, min, max);

@@ -5,6 +5,7 @@ export type Objective =
   | "Engajamento"
   | "Tráfego"
   | "Views"
+  | "Conversão"
   | "Performance Max"
   | "Outros";
 
@@ -68,6 +69,12 @@ export interface Dataset {
   fetchedAt: string;
   /** plataformas que responderam sem nenhuma linha */
   emptyPlatforms: Platform[];
+  /** primeira e última data presentes nos dados (nada de janela fixa) */
+  firstDate: string;
+  lastDate: string;
+  /** blocos da resposta que o painel ainda não sabe ler — nada é descartado
+   *  em silêncio: a tela avisa para que o mapeamento seja adicionado */
+  unknownSources: { key: string; rows: number }[];
 }
 
 export type GoalMetric =

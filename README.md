@@ -102,6 +102,30 @@ aparece.
 **Metas de meses futuros** — ficam com status "não iniciada" e saem da conta de
 "metas no ritmo", em vez de contarem como atrasadas.
 
+## O que o painel absorve sozinho
+
+A base cresce, e o painel foi feito para acompanhar sem alteração de código:
+
+| aparece na base | painel |
+|---|---|
+| dia novo | entra no gráfico, no filtro e nas metas |
+| dia fora do período contratado | a janela navegável estica, nada fica invisível |
+| campanha nova | ganha linha na tabela, série no gráfico e cartão de eficiência |
+| objetivo novo reconhecido | vira cartão próprio com a métrica-alvo e o custo dele |
+| objetivo não reconhecido | isolado por campanha — dois tipos novos nunca dividem o mesmo custo |
+| criativo novo | entra na grade com preview, e no resumo do topo |
+| coluna renomeada | os aliases por plataforma cobrem os nomes conhecidos |
+| plataforma nova na resposta | a tela avisa, com nome e contagem de linhas, para o mapeamento ser incluído |
+
+O que **precisa** de mão são as metas contratadas (`lib/campaigns.ts`), porque
+são valores de contrato, e o mapeamento de uma plataforma inédita.
+
+```bash
+node --experimental-strip-types scripts/test-dynamic.ts
+```
+
+verifica todos os casos da tabela acima.
+
 ## Layout
 
 Baseline 1366×768. `scripts/audit-layout.mjs` percorre as 16 rotas em dez

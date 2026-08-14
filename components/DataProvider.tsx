@@ -22,6 +22,14 @@ interface Ctx {
   today: string;
   fetchedAt: string;
   emptyPlatforms: Platform[];
+  /** blocos da resposta sem mapeamento (plataforma nova na origem) */
+  unknownSources: { key: string; rows: number }[];
+  /**
+   * Janela navegável: o período contratado esticado pelos dados que existem.
+   * Se a campanha for prorrogada ou vier linha antes do início, nada fica
+   * invisível — o filtro passa a cobrir sozinho.
+   */
+  window: Range;
   /** origem falhou e estamos servindo o último dado conhecido */
   stale: boolean;
   range: Range;
@@ -91,18 +99,29 @@ export function DataProvider({
 
   const today = dataset?.today || campaign.window.end;
 
+  /** janela contratada esticada pelo que a base realmente tem */
+  const window = useMemo<Range>(() => {
+    const start =
+      dataset?.firstDate && dataset.firstDate < campaign.window.start
+        ? dataset.firstDate
+        : campaign.window.start;
+    const end =
+      dataset?.lastDate && dataset.lastDate > campaign.window.end
+        ? dataset.lastDate
+        : campaign.window.end;
+    return { start, end };
+  }, [dataset?.firstDate, dataset?.lastDate, campaign.window]);
+
   // período inicial: todo o período disponível
   useEffect(() => {
     if (dataset && !range) {
-      setRange(
-        PRESETS[3].build({ today: dataset.today, window: campaign.window })
-      );
+      setRange(PRESETS[3].build({ today: dataset.today, window }));
     }
-  }, [dataset, range, campaign.window]);
+  }, [dataset, range, window]);
 
   const effectiveRange: Range = useMemo(
-    () => range ?? { start: campaign.window.start, end: today },
-    [range, campaign.window.start, today]
+    () => range ?? { start: window.start, end: today },
+    [range, window.start, today]
   );
 
   const allRows = useMemo(() => dataset?.rows ?? [], [dataset]);
@@ -123,8 +142,8 @@ export function DataProvider({
   const totals = useMemo(() => sumRows(rows), [rows]);
 
   const matched = useMemo(
-    () => matchPreset(effectiveRange, { today, window: campaign.window }),
-    [effectiveRange, today, campaign.window]
+    () => matchPreset(effectiveRange, { today, window }),
+    [effectiveRange, today, window]
   );
   const presetId = chosenPreset ?? matched;
 
@@ -133,9 +152,9 @@ export function DataProvider({
       const preset = PRESETS.find((p) => p.id === id);
       if (!preset) return;
       setChosenPreset(id);
-      setRange(preset.build({ today, window: campaign.window }));
+      setRange(preset.build({ today, window }));
     },
-    [today, campaign.window]
+    [today, window]
   );
 
   /** datas escolhidas à mão limpam o preset ativo */
@@ -152,6 +171,8 @@ export function DataProvider({
     today,
     fetchedAt: dataset?.fetchedAt ?? "",
     emptyPlatforms: dataset?.emptyPlatforms ?? [],
+    unknownSources: dataset?.unknownSources ?? [],
+    window,
     stale,
     range: effectiveRange,
     presetId,

@@ -110,6 +110,13 @@ export const OBJECTIVE_METRIC: Record<
     cost: cpv,
     costHint: "Investimento ÷ visualizações (só campanhas de views)",
   },
+  Conversão: {
+    metric: "clicks",
+    metricLabel: "Cliques",
+    costLabel: "CPC",
+    cost: cpc,
+    costHint: "Investimento ÷ cliques (só campanhas de conversão)",
+  },
   "Performance Max": {
     metric: "clicks",
     metricLabel: "Cliques",
@@ -137,25 +144,37 @@ export interface ObjectiveSlice {
   campaigns: string[];
 }
 
-/** Agrupa por objetivo e calcula o custo de cada um com o seu próprio investimento. */
+/**
+ * Agrupa por objetivo e calcula o custo de cada um com o seu próprio
+ * investimento. Objetivo não reconhecido ("Outros") é separado por campanha:
+ * dois tipos novos e diferentes nunca dividem o mesmo cartão de custo.
+ */
 export function byObjective(rows: Row[]): ObjectiveSlice[] {
-  const groups = new Map<Objective, Row[]>();
+  const groups = new Map<string, Row[]>();
+  const keyOf = (r: Row) =>
+    r.objective === "Outros" ? `Outros|${r.campaign}` : r.objective;
   for (const r of rows) {
-    const arr = groups.get(r.objective);
+    const k = keyOf(r);
+    const arr = groups.get(k);
     if (arr) arr.push(r);
-    else groups.set(r.objective, [r]);
+    else groups.set(k, [r]);
   }
   const order: Objective[] = [
     "Alcance",
     "Engajamento",
     "Tráfego",
     "Views",
+    "Conversão",
     "Performance Max",
     "Outros",
   ];
   return [...groups.entries()]
-    .sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]))
-    .map(([objective, list]) => {
+    .sort(
+      (a, b) =>
+        order.indexOf(a[1][0].objective) - order.indexOf(b[1][0].objective)
+    )
+    .map(([, list]) => {
+      const objective = list[0].objective;
       const totals = sumRows(list);
       const def = OBJECTIVE_METRIC[objective];
       return {

@@ -118,6 +118,7 @@ function detectObjective(campaign: string, platform: Platform): Objective {
   if (/ENGAJAMENTO|ENGAGEMENT/.test(c)) return "Engajamento";
   if (/TR[ÁA]FEGO|TRAFFIC|LINK.?CLICK/.test(c)) return "Tráfego";
   if (/VIEW|VISUALIZA|VIDEO/.test(c)) return "Views";
+  if (/CONVERS|LEAD|CADASTR|MATR[ÍI]CULA|INSCRI/.test(c)) return "Conversão";
   if (/PMAX|PERFORMANCE ?MAX/.test(c)) return "Performance Max";
   // TikTok e Display são comprados por impressão; sem palavra-chave, alcance
   if (platform === "tiktok" || platform === "display") return "Alcance";
@@ -321,10 +322,16 @@ export function normalize(
 ): Dataset {
   const rows: Row[] = [];
   const seen = new Set<Platform>();
+  const unknownSources: { key: string; rows: number }[] = [];
 
   for (const [key, value] of Object.entries(payload)) {
+    if (!Array.isArray(value)) continue;
     const mapper = MAPPERS[key];
-    if (!mapper || !Array.isArray(value)) continue;
+    if (!mapper) {
+      // plataforma nova na origem: registra para a tela avisar
+      if (value.length) unknownSources.push({ key, rows: value.length });
+      continue;
+    }
     seen.add(mapper.platform);
     for (const raw of value as Raw[]) {
       if (!raw || typeof raw !== "object") continue;
@@ -340,12 +347,17 @@ export function normalize(
   const emptyPlatforms = expected.filter((p) => !withData.has(p));
 
   const ts = typeof payload.timestamp === "string" ? payload.timestamp : "";
-  const today = toDay(ts) || rows[rows.length - 1]?.date || "";
+  const firstDate = rows[0]?.date ?? "";
+  const lastDate = rows[rows.length - 1]?.date ?? "";
+  const today = toDay(ts) || lastDate;
 
   return {
     rows,
     today,
     fetchedAt: ts,
     emptyPlatforms,
+    firstDate,
+    lastDate,
+    unknownSources,
   };
 }

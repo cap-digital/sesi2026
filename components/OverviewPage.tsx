@@ -10,6 +10,7 @@ import {
   ObjectiveEfficiency,
   PendingPlatforms,
   RankCard,
+  UnknownSourcesNotice,
   VolumeKpis,
   usePlatformSeries,
 } from "./blocks";
@@ -49,6 +50,7 @@ export function OverviewPage({ title = "Visão geral" }: { title?: string }) {
         description="Investimento, entrega e eficiência das plataformas no período selecionado."
       />
 
+      <UnknownSourcesNotice />
       <PendingPlatforms />
       <MissingInvestmentNotice rows={rows} />
 

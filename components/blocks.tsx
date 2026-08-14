@@ -709,6 +709,46 @@ export function PendingPlatforms() {
   );
 }
 
+/**
+ * Aviso quando a origem passa a devolver um bloco que o painel ainda não sabe
+ * ler — uma plataforma nova, por exemplo. Sem isso a entrega dela sumiria dos
+ * totais sem ninguém perceber.
+ */
+export function UnknownSourcesNotice() {
+  const { unknownSources } = useDash();
+  if (!unknownSources.length) return null;
+
+  const total = unknownSources.reduce((a, s) => a + s.rows, 0);
+  return (
+    <Card className="mb-4 flex items-start gap-3 p-3.5">
+      <span
+        aria-hidden
+        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+        style={{ background: "#ec835a1f", color: "#b95a30" }}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-3.5 w-3.5"
+        >
+          <path d="M12 8v5M12 16.5h.01" />
+          <circle cx="12" cy="12" r="9" />
+        </svg>
+      </span>
+      <p className="text-[11.5px] leading-relaxed text-ink2">
+        <strong className="font-semibold text-ink">Nova origem detectada:</strong>{" "}
+        {unknownSources.map((s) => s.key).join(", ")} ({fmtInt(total)}{" "}
+        {total === 1 ? "linha" : "linhas"}). Esses dados ainda não entram nos
+        totais — avise para incluirmos a plataforma no painel.
+      </p>
+    </Card>
+  );
+}
+
 /** Aviso quando a origem não informou o investimento de alguma campanha. */
 export function MissingInvestmentNotice({ rows }: { rows: Row[] }) {
   const affected = useMemo(() => {

@@ -32,12 +32,19 @@ import {
 import type { PlatformDef } from "@/lib/campaigns";
 import type { Objective, Row } from "@/lib/types";
 
-/* paleta categórica validada (light) — ordem fixa por objetivo */
+/*
+ * Paleta categórica validada (light), ordem fixa por objetivo — a cor segue o
+ * objetivo, nunca a posição no ranking. Conversão (magenta) fica na faixa de
+ * aviso de CVD contra Views (teal): é aceitável porque todo gráfico daqui traz
+ * legenda e rótulo direto, e os dois objetivos raramente coexistem na mesma
+ * plataforma.
+ */
 const OBJECTIVE_COLORS: Record<Objective, string> = {
   Alcance: "#2a78d6",
   Engajamento: "#d95926",
   Views: "#12876a",
   Tráfego: "#4a3aa7",
+  Conversão: "#a03a86",
   "Performance Max": "#2a78d6",
   Outros: "#898781",
 };
