@@ -56,12 +56,21 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/*
+ * O canvas do documento precisa ter a cor do painel: sem isso, o rubber band
+ * do scroll (macOS/iOS) revela o branco do navegador acima e abaixo da página.
+ * A classe de tema é aplicada ao <html> pelo shell, então --page já é a do
+ * painel aqui. overscroll-behavior corta o excesso de arrasto por garantia.
+ */
 html {
   scroll-behavior: smooth;
+  background: var(--page);
+  overscroll-behavior-y: none;
 }
 
 body {
   background: var(--page);
+  overscroll-behavior-y: none;
   color: var(--ink);
   font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI",
     sans-serif;

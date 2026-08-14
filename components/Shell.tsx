@@ -17,6 +17,18 @@ interface BrandArt {
   eyebrow: string;
 }
 
+/**
+ * Leva a classe de tema para o <html>. O canvas do documento herda a cor do
+ * painel e o rubber band do scroll deixa de mostrar o branco do navegador.
+ */
+function useRootTheme(themeClass: string) {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add(themeClass);
+    return () => root.classList.remove(themeClass);
+  }, [themeClass]);
+}
+
 function BackHome({ tone = "dark" }: { tone?: "dark" | "light" }) {
   return (
     <Link
@@ -151,6 +163,7 @@ export function SidebarShell({
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  useRootTheme(themeClass);
 
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
@@ -251,6 +264,7 @@ export function TopbarShell({
   children: React.ReactNode;
 }) {
   const { campaign } = useDash();
+  useRootTheme(themeClass);
 
   return (
     <div className={`${themeClass} min-h-screen bg-page`}>
@@ -290,10 +304,11 @@ export function TopbarShell({
         </div>
       </div>
 
-      {/* navegação em pílula: sobrepõe a faixa e gruda no topo ao rolar.
-          O sticky precisa ser filho direto do contêiner alto da página —
-          dentro de um wrapper curto ele rolaria embora. */}
-      <div className="sticky top-2 z-40 -mt-3 px-3 sm:px-6">
+      {/* navegação em pílula: respira abaixo da faixa de identidade, sem
+          encostar nela, e gruda no topo ao rolar. O sticky precisa ser filho
+          direto do contêiner alto da página — dentro de um wrapper curto ele
+          rolaria embora. */}
+      <div className="sticky top-2 z-40 mt-3.5 px-3 sm:px-6">
         <div className="mx-auto flex w-full max-w-[1280px] justify-center">
           {/* min-w-0 é necessário: sem ele o min-width:auto do flex impede o
               max-w-full de limitar, e a pílula empurra a largura da página */}
