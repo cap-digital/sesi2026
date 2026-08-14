@@ -122,7 +122,7 @@ export const JEQUIE: CampaignDef = {
   name: "Inauguração Escola SESI Jequié",
   subtitle: "SESI Bahia · Jequié",
   endpoint: "SesiJequie2026",
-  window: { start: "2026-08-01", end: "2026-09-30" },
+  window: { start: "2026-08-12", end: "2026-09-30" },
   monthly: true,
   platforms: [
     {

@@ -6,7 +6,7 @@ home institucional SESI.
 | Rota | Campanha | Plataformas | Período |
 |---|---|---|---|
 | `/robotica` | Olimpíada Brasileira de Robótica 2026 | Meta Ads, Rede Display, YouTube, TikTok | 11/08 – 31/08/2026 |
-| `/jequie` | Inauguração Escola SESI Jequié | Meta Ads, Google PMAX | 01/08 – 30/09/2026 |
+| `/jequie` | Inauguração Escola SESI Jequié | Meta Ads, Google PMAX | 12/08 – 30/09/2026 |
 
 ## Rodando
 
