@@ -84,13 +84,19 @@ function labelStride(labels: string[], slot: number) {
   return Math.max(1, Math.ceil((widest + 8) / slot));
 }
 
-/** rótulo acima da barra, desenhado só nos índices que passam no filtro */
+/**
+ * Rótulo acima da barra, desenhado só nos índices que passam no filtro.
+ * O x é preso aos limites do plot para o texto não vazar do gráfico nas
+ * barras das extremidades.
+ */
 function TopLabel({
   visible,
   format,
+  bounds,
 }: {
   visible: (index: number) => boolean;
   format: (n: number) => string;
+  bounds?: { left: number; right: number };
 }) {
   const Renderer = (props: {
     x?: number | string;
@@ -102,18 +108,24 @@ function TopLabel({
     const index = props.index ?? 0;
     const value = Number(props.value ?? 0);
     if (!visible(index) || value <= 0) return null;
-    const x = Number(props.x ?? 0) + Number(props.width ?? 0) / 2;
-    const y = Number(props.y ?? 0) - 6;
+
+    const text = format(value);
+    const half = labelWidth(text) / 2;
+    let x = Number(props.x ?? 0) + Number(props.width ?? 0) / 2;
+    if (bounds) {
+      x = Math.min(Math.max(x, bounds.left + half), bounds.right - half);
+    }
+
     return (
       <text
         x={x}
-        y={y}
+        y={Number(props.y ?? 0) - 6}
         textAnchor="middle"
         fontSize={LABEL_SIZE}
         fontWeight={600}
         fill="var(--ink)"
       >
-        {format(value)}
+        {text}
       </text>
     );
   };
@@ -252,8 +264,12 @@ export function StackedBars({
     __total: used.reduce((a, s) => a + Number(d[s.key] ?? 0), 0),
   }));
 
-  const plotWidth = Math.max(0, width - 46);
+  // eixo Y ocupa 54px e a margem esquerda é -14: o plot começa em 40
+  const plotLeft = 40;
+  const plotRight = Math.max(plotLeft + 1, width - 6);
+  const plotWidth = Math.max(0, plotRight - plotLeft);
   const slot = data.length ? plotWidth / data.length : 0;
+  const bounds = { left: plotLeft, right: plotRight };
   const stride = labelStride(
     withTotals.map((d) => fmtLabel(Number(d.__total))),
     slot
@@ -347,7 +363,7 @@ export function StackedBars({
               {i === used.length - 1 && (
                 <LabelList
                   dataKey="__total"
-                  content={TopLabel({ visible, format: fmtLabel })}
+                  content={TopLabel({ visible, format: fmtLabel, bounds })}
                 />
               )}
             </Bar>

@@ -37,8 +37,16 @@ const VIEWPORTS = [
 
 const audit = () => {
   const vw = window.innerWidth;
+  // "a página rola de lado?" é o teste que importa. scrollWidth infla com o
+  // conteúdo de contêineres que rolam por conta própria (ex.: a nav em pílula),
+  // o que não é quebra de layout.
+  const before = window.scrollX;
+  window.scrollTo(200, window.scrollY);
+  const canScrollX = window.scrollX > 0;
+  window.scrollTo(before, window.scrollY);
+
   const out = {
-    overflowX: document.documentElement.scrollWidth - vw,
+    overflowX: canScrollX ? document.documentElement.scrollWidth - vw : 0,
     offenders: [],
     collisions: [],
     clippedSticky: [],

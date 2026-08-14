@@ -6,6 +6,7 @@ import {
   CampaignTable,
   DailyMetricCard,
   GoalsSummary,
+  MissingInvestmentNotice,
   ObjectiveEfficiency,
   PendingPlatforms,
   RankCard,
@@ -49,6 +50,7 @@ export function OverviewPage({ title = "Visão geral" }: { title?: string }) {
       />
 
       <PendingPlatforms />
+      <MissingInvestmentNotice rows={rows} />
 
       <div className="space-y-6">
         <VolumeKpis totals={totals} accent="var(--brand)" extra={extra} />

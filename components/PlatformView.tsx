@@ -5,6 +5,7 @@ import { useDash } from "./DataProvider";
 import {
   CampaignTable,
   DailyMetricCard,
+  MissingInvestmentNotice,
   ObjectiveEfficiency,
   RankCard,
   VolumeKpis,
@@ -19,8 +20,9 @@ import {
   PageHeader,
   SectionTitle,
 } from "./ui";
-import { ctr, groupBy, sumRows, vtr } from "@/lib/metrics";
+import { cpm, ctr, groupBy, sumRows, vtr } from "@/lib/metrics";
 import {
+  fmtBRL,
   fmtBRLCompact,
   fmtCompact,
   fmtCost,
@@ -228,12 +230,13 @@ function VideoRetention({
 
   // o funil parte de quem assistiu 25% — thruplay/views é contado por outra
   // régua e pode ficar abaixo do primeiro quartil
+  // mantém todos os quartis, mesmo zerados: a queda faz parte da leitura
   const steps = [
     { label: "25% assistido", value: t.p25 },
     { label: "50% assistido", value: t.p50 },
     { label: "75% assistido", value: t.p75 },
     { label: "100% assistido", value: t.p100 },
-  ].filter((s) => s.value > 0);
+  ];
 
   const completion = t.p25 > 0 ? t.p100 / t.p25 : NaN;
 
@@ -324,6 +327,21 @@ export function PlatformView({ def }: { def: PlatformDef }) {
     return out.slice(0, 1);
   }, [totals]);
 
+  /**
+   * No TikTok a compra é por impressão e a peça é vídeo: CPM e VTR dizem mais
+   * que cliques e CTR — que seguem disponíveis na tabela de campanhas.
+   */
+  const kpiItems = useMemo(() => {
+    if (def.id !== "tiktok") return undefined;
+    return [
+      { label: "Investimento", value: fmtBRL(totals.investment) },
+      { label: "Impressões", value: fmtInt(totals.impressions) },
+      { label: "CPM", value: fmtCost(cpm(totals)) },
+      { label: "VTR", value: fmtPct(vtr(totals)) },
+      { label: "Visualizações", value: fmtInt(totals.views) },
+    ];
+  }, [def.id, totals]);
+
   if (!platformEverHadData) {
     return (
       <>
@@ -349,8 +367,15 @@ export function PlatformView({ def }: { def: PlatformDef }) {
         description="Volume, eficiência por objetivo e evolução diária no período selecionado."
       />
 
+      <MissingInvestmentNotice rows={rows} />
+
       <div className="space-y-6">
-        <VolumeKpis totals={totals} accent={def.color} extra={extra} />
+        <VolumeKpis
+          totals={totals}
+          accent={def.color}
+          extra={extra}
+          items={kpiItems}
+        />
 
         <section>
           <SectionTitle
@@ -376,7 +401,7 @@ export function PlatformView({ def }: { def: PlatformDef }) {
             color={def.color}
           />
           <VideoRetention rows={rows} color={def.color} />
-          {totals.impressions > 0 && (
+          {def.id !== "tiktok" && totals.impressions > 0 && (
             <Card className="p-3.5 sm:p-4">
               <SectionTitle title="Taxas da plataforma" hint="somando todos os objetivos" />
               <dl className="grid grid-cols-2 gap-x-3 gap-y-3.5 text-[11px]">
@@ -417,7 +442,7 @@ export function PlatformView({ def }: { def: PlatformDef }) {
             hint="métrica-alvo e custo calculados por objetivo"
           />
           <Card className={`p-3.5 sm:p-4 ${refreshing ? "opacity-50" : ""}`}>
-            <CampaignTable rows={rows} />
+            <CampaignTable rows={rows} variant={def.id} />
           </Card>
         </section>
       </div>

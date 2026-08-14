@@ -85,9 +85,22 @@ vezes devolvem HTTP 500. O proxy em `app/api/[campaign]/route.ts` mantém a últ
 resposta boa em memória, serve na hora e revalida em background; se a origem
 falhar, o painel mostra o último dado conhecido com um aviso em vez de quebrar.
 
-**TikTok e Jequié** — as bases ainda não retornam linhas. As metas estão
-configuradas e o mapeamento cobre os nomes de coluna prováveis; as telas exibem
-estado de espera e populam sozinhas quando a veiculação começar.
+**Investimento não informado** — a origem às vezes devolve `#N/A` na coluna
+Investimento. Nesse caso o painel mostra "—", nunca R$ 0,00, e avisa na
+campanha afetada: a entrega segue contabilizada, mas o custo fica indisponível
+até o valor ser corrigido na origem.
+
+**PMAX** — a peça vem como link de compartilhamento do Drive, que devolve HTML.
+`driveImage()` converte para o endpoint de imagem direta (`lh3` com fallback
+para `drive.google.com/thumbnail`).
+
+**TikTok** — a compra é por impressão e a peça é vídeo, então a visão geral
+destaca CPM e VTR no lugar de cliques e CTR, a tabela de campanhas troca
+cliques/CTR por visualizações/CPM, e o cartão de taxas da plataforma não
+aparece.
+
+**Metas de meses futuros** — ficam com status "não iniciada" e saem da conta de
+"metas no ritmo", em vez de contarem como atrasadas.
 
 ## Layout
 

@@ -295,7 +295,9 @@ export function TopbarShell({
           dentro de um wrapper curto ele rolaria embora. */}
       <div className="sticky top-2 z-40 -mt-3 px-3 sm:px-6">
         <div className="mx-auto flex w-full max-w-[1280px] justify-center">
-          <div className="scroll-thin flex max-w-full gap-1 overflow-x-auto rounded-pill border border-hairline bg-surface/95 p-1.5 shadow-float backdrop-blur-md">
+          {/* min-w-0 é necessário: sem ele o min-width:auto do flex impede o
+              max-w-full de limitar, e a pílula empurra a largura da página */}
+          <div className="scroll-thin flex min-w-0 max-w-full gap-1 overflow-x-auto rounded-pill border border-hairline bg-surface/95 p-1.5 shadow-float backdrop-blur-md">
             {nav.map((i) => (
               <PillLink key={i.href} item={i} />
             ))}

@@ -19,9 +19,11 @@ import { StackedBars, RankBars, type Series } from "./charts";
 import {
   OBJECTIVE_METRIC,
   byObjective,
+  cpm,
   ctr,
   daily,
   groupBy,
+  investmentOrNull,
   sumRows,
 } from "@/lib/metrics";
 import type { ObjectiveSlice } from "@/lib/metrics";
@@ -32,6 +34,7 @@ import {
   fmtBRL,
   fmtBRLCompact,
   fmtBRLLabel,
+  fmtBRLOrDash,
   fmtCompact,
   fmtCost,
   fmtDate,
@@ -49,18 +52,23 @@ export function VolumeKpis({
   totals,
   accent,
   extra = [],
+  items: custom,
 }: {
   totals: Totals;
   accent: string;
   extra?: { label: string; value: string; hint?: string }[];
+  /** substitui o conjunto padrão de KPIs (usado quando a plataforma pede
+   *  outras métricas de destaque) */
+  items?: { label: string; value: string; hint?: string }[];
 }) {
-  const items = [
-    { label: "Investimento", value: fmtBRL(totals.investment) },
-    { label: "Impressões", value: fmtInt(totals.impressions) },
-    { label: "Cliques", value: fmtInt(totals.clicks) },
-    { label: "CTR", value: fmtPct(ctr(totals)) },
-    ...extra,
-  ];
+  const items =
+    custom ?? [
+      { label: "Investimento", value: fmtBRLOrDash(investmentOrNull(totals)) },
+      { label: "Impressões", value: fmtInt(totals.impressions) },
+      { label: "Cliques", value: fmtInt(totals.clicks) },
+      { label: "CTR", value: fmtPct(ctr(totals)) },
+      ...extra,
+    ];
   const cols = items.length >= 6 ? 6 : items.length === 5 ? 5 : 4;
   return (
     <StatGrid cols={cols}>
@@ -113,7 +121,10 @@ function ObjectiveCard({
       <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-hairline pt-3 text-[11px]">
         {[
           { label: slice.primaryLabel, value: fmtInt(slice.primaryValue) },
-          { label: "Investimento", value: fmtBRL(t.investment) },
+          {
+            label: "Investimento",
+            value: fmtBRLOrDash(investmentOrNull(t)),
+          },
           // não repete a métrica-alvo (ex.: impressões no objetivo de alcance)
           slice.primaryLabel === "Impressões"
             ? { label: "Cliques", value: fmtInt(t.clicks) }
@@ -425,13 +436,15 @@ function GoalRow({ g, color }: { g: GoalProgress; color: string }) {
       <div className="mt-3">
         <div className="mb-1.5 flex items-baseline justify-between gap-2">
           <span className="tnum text-[12px] font-medium text-ink2">
-            {fmtBRL(g.spent)}
+            {g.spentMissing ? "—" : fmtBRL(g.spent)}
             <span className="ml-1 text-[11px] font-normal text-muted">
               / {fmtBRL(g.goal.investment)}
             </span>
           </span>
           <span className="tnum text-[11px] text-muted">
-            {fmtPct(g.pctInvest, 1)} do verba
+            {g.spentMissing
+              ? "investimento não informado"
+              : `${fmtPct(g.pctInvest, 1)} da verba`}
           </span>
         </div>
         <ProgressMeter
@@ -466,7 +479,7 @@ function GoalRow({ g, color }: { g: GoalProgress; color: string }) {
           </dd>
         </div>
       </dl>
-      {g.hasData && isFinite(g.cost) && isFinite(g.targetCost) && (
+      {g.hasData && !g.spentMissing && isFinite(g.cost) && isFinite(g.targetCost) && (
         <p className="mt-2 text-[10.5px] leading-snug text-muted">
           {better
             ? `Custo ${fmtPct(1 - g.cost / g.targetCost, 0)} abaixo do previsto por ${g.goal.metricLabel.toLowerCase()}.`
@@ -492,6 +505,13 @@ function StatusIcon({ status }: { status: GoalProgress["status"] }) {
       <svg {...common}>
         <path d="M12 8v5M12 16.5h.01" />
         <circle cx="12" cy="12" r="9" />
+      </svg>
+    );
+  if (status === "notstarted")
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7.5V12l3 2" />
       </svg>
     );
   if (status === "nodata")
@@ -689,11 +709,68 @@ export function PendingPlatforms() {
   );
 }
 
+/** Aviso quando a origem não informou o investimento de alguma campanha. */
+export function MissingInvestmentNotice({ rows }: { rows: Row[] }) {
+  const affected = useMemo(() => {
+    const map = groupBy(
+      rows.filter((r) => r.investmentMissing),
+      (r) => r.campaign
+    );
+    return [...map.keys()];
+  }, [rows]);
+
+  if (!affected.length) return null;
+
+  return (
+    <Card className="mb-4 flex items-start gap-3 p-3.5">
+      <span
+        aria-hidden
+        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+        style={{ background: "#ec835a1f", color: "#b95a30" }}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-3.5 w-3.5"
+        >
+          <path d="M12 8v5M12 16.5h.01" />
+          <circle cx="12" cy="12" r="9" />
+        </svg>
+      </span>
+      <p className="text-[11.5px] leading-relaxed text-ink2">
+        <strong className="font-semibold text-ink">
+          Investimento não informado
+        </strong>{" "}
+        {affected.length === 1 ? "na campanha" : "nas campanhas"}{" "}
+        {affected.map((c) => (
+          <span key={c} className="text-ink">
+            {c}
+          </span>
+        ))}
+        . A entrega está contabilizada, mas o custo dessa campanha aparece como
+        indisponível até o valor ser informado.
+      </p>
+    </Card>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Tabela de campanhas com custo por objetivo                          */
 /* ------------------------------------------------------------------ */
 
-export function CampaignTable({ rows }: { rows: Row[] }) {
+export function CampaignTable({
+  rows,
+  variant,
+}: {
+  rows: Row[];
+  /** no TikTok as colunas de meio viram visualizações e CPM */
+  variant?: Platform;
+}) {
+  const videoView = variant === "tiktok";
   const list = useMemo(() => {
     const map = groupBy(rows, (r) => r.campaign);
     return [...map.entries()]
@@ -734,10 +811,10 @@ export function CampaignTable({ rows }: { rows: Row[] }) {
               Impressões
             </th>
             <th scope="col" className="px-2 py-2 text-right font-medium">
-              Cliques
+              {videoView ? "Visualizações" : "Cliques"}
             </th>
             <th scope="col" className="px-2 py-2 text-right font-medium">
-              CTR
+              {videoView ? "CPM" : "CTR"}
             </th>
             <th scope="col" className="px-2 py-2 text-right font-medium">
               Métrica-alvo
@@ -762,16 +839,16 @@ export function CampaignTable({ rows }: { rows: Row[] }) {
                 <span className="text-ink2">{r.objective}</span>
               </td>
               <td className="px-2 py-2 text-right font-semibold text-ink">
-                {fmtBRL(r.totals.investment)}
+                {fmtBRLOrDash(investmentOrNull(r.totals))}
               </td>
               <td className="px-2 py-2 text-right text-ink2">
                 {fmtInt(r.totals.impressions)}
               </td>
               <td className="px-2 py-2 text-right text-ink2">
-                {fmtInt(r.totals.clicks)}
+                {fmtInt(videoView ? r.totals.views : r.totals.clicks)}
               </td>
               <td className="px-2 py-2 text-right text-ink2">
-                {fmtPct(ctr(r.totals))}
+                {videoView ? fmtCost(cpm(r.totals)) : fmtPct(ctr(r.totals))}
               </td>
               <td className="px-2 py-2 text-right text-ink2">
                 {fmtInt(r.primary)}{" "}

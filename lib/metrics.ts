@@ -2,6 +2,7 @@ import type { Objective, Row, Totals } from "./types";
 
 export const EMPTY_TOTALS: Totals = {
   investment: 0,
+  investmentMissing: 0,
   impressions: 0,
   clicks: 0,
   linkClicks: 0,
@@ -39,9 +40,18 @@ export function sumRows(rows: Row[]): Totals {
   const t: Totals = { ...EMPTY_TOTALS };
   for (const r of rows) {
     for (const k of SUM_KEYS) t[k] += r[k];
+    if (r.investmentMissing) t.investmentMissing += 1;
     t.rows += 1;
   }
   return t;
+}
+
+/**
+ * Investimento com zero ambíguo resolvido: quando a origem não informou o
+ * valor, "R$ 0,00" mentiria — devolve null para a UI mostrar "—".
+ */
+export function investmentOrNull(t: Totals): number | null {
+  return t.investment === 0 && t.investmentMissing > 0 ? null : t.investment;
 }
 
 const div = (a: number, b: number) => (b > 0 ? a / b : NaN);
@@ -232,6 +242,7 @@ export function creatives(rows: Row[]): Creative[] {
     if (!c.permalink && r.permalink) c.permalink = r.permalink;
     if (!c.videoUrl && r.videoUrl) c.videoUrl = r.videoUrl;
     for (const k of SUM_KEYS) c.totals[k] += r[k];
+    if (r.investmentMissing) c.totals.investmentMissing += 1;
     c.totals.rows += 1;
   }
   return [...map.values()].sort(

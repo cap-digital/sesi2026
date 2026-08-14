@@ -31,7 +31,9 @@ export function GoalsPage() {
     ).length
   );
 
-  const onTrack = progress.filter(
+  // metas de meses futuros não entram na conta de ritmo
+  const started = progress.filter((g) => g.status !== "notstarted");
+  const onTrack = started.filter(
     (g) => g.status === "ahead" || g.status === "ontrack"
   ).length;
 
@@ -62,7 +64,12 @@ export function GoalsPage() {
           />
           <KpiCard
             label="Metas no ritmo"
-            value={`${onTrack} de ${progress.length}`}
+            value={`${onTrack} de ${started.length}`}
+            hint={
+              started.length < progress.length
+                ? `${progress.length - started.length} ainda não iniciada(s)`
+                : undefined
+            }
           />
         </StatGrid>
       </div>

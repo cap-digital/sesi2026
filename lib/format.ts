@@ -24,6 +24,10 @@ export const fmtInt = (n: number) => int.format(Math.round(n || 0));
 
 export const fmtBRL = (n: number) => brlCompactish.format(n || 0);
 
+/** investimento que a origem não informou aparece como "—", não R$ 0,00 */
+export const fmtBRLOrDash = (n: number | null) =>
+  n === null ? "—" : brlCompactish.format(n || 0);
+
 /**
  * Custos unitários: valores acima de R$ 1 (CPM, CPC) ficam com 2 casas;
  * abaixo disso (CPV, CPE) ganham a terceira casa para não zerar.

@@ -17,6 +17,14 @@ export function num(v: unknown): number {
   return isFinite(n) ? n : 0;
 }
 
+/** célula de erro de planilha: #N/A, #REF!, #DIV/0! ... */
+function isErrorCell(v: unknown): boolean {
+  return (
+    typeof v === "string" &&
+    /^#(N\/A|REF!|DIV\/0!|VALUE!|NAME\?|NULL!|NUM!)/i.test(v.trim())
+  );
+}
+
 function str(v: unknown): string | null {
   if (typeof v !== "string") return null;
   const s = v.trim();
@@ -26,6 +34,24 @@ function str(v: unknown): string | null {
 /** URLs de criativo em http quebram por conteúdo misto numa página https */
 function secureUrl(v: string | null): string | null {
   return v ? v.replace(/^http:\/\//i, "https://") : v;
+}
+
+/**
+ * O PMAX entrega a peça como link de compartilhamento do Drive, que devolve
+ * HTML e não serve para <img>. Converte para o endpoint de imagem direta.
+ */
+export function driveImage(url: string | null): string | null {
+  if (!url) return null;
+  const id = url.match(
+    /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=|thumbnail\?(?:[^#]*&)?id=)|lh3\.googleusercontent\.com\/d\/)([\w-]{20,})/
+  )?.[1];
+  return id ? `https://lh3.googleusercontent.com/d/${id}=w600` : url;
+}
+
+/** fallback de imagem do Drive, quando o endpoint do lh3 falha */
+export function driveImageFallback(url: string): string | null {
+  const id = url.match(/lh3\.googleusercontent\.com\/d\/([\w-]{20,})/)?.[1];
+  return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w600` : null;
 }
 
 /**
@@ -120,8 +146,15 @@ function base(row: Raw, platform: Platform): Row {
     campaign,
     objective: detectObjective(campaign, platform),
     adset:
-      pickStr(row, ["adset_name", "ad_group_name", "adgroup_name"]) ?? "—",
-    ad: pickStr(row, ["ad_name", "creative_name", "video_title"]) ?? "—",
+      pickStr(row, [
+        "adset_name",
+        "ad_group_name",
+        "asset_group_name",
+        "adgroup_name",
+      ]) ?? "—",
+    ad:
+      pickStr(row, ["ad_name", "asset_name", "creative_name", "video_title"]) ??
+      "Sem peça identificada",
     creative: null,
     permalink: null,
     videoUrl: null,
@@ -129,6 +162,9 @@ function base(row: Raw, platform: Platform): Row {
     age: null,
     gender: null,
     investment: pickNum(row, ["Investimento"]),
+    // a origem às vezes devolve #N/A: 0 aqui significa "não informado",
+    // não "não houve investimento"
+    investmentMissing: isErrorCell(row.Investimento),
     impressions: pickNum(row, ["impressions", "impression"]),
     clicks: pickNum(row, ["clicks", "click"]),
     ...EMPTY,
@@ -247,16 +283,19 @@ function fromTiktok(row: Raw): Row {
   return r;
 }
 
-/** Base do PMAX (Jequié) ainda vazia — mapeamento por aliases prováveis. */
 function fromPmax(row: Raw): Row {
   const r = base(row, "pmax");
-  r.creative = secureUrl(
-    pickStr(row, [
-      "ad_image_ad_image_url",
-      "image_url",
-      "asset_image_url",
-      "thumbnail_url",
-    ])
+  // a peça vem como link do Drive, que precisa virar imagem direta
+  r.creative = driveImage(
+    secureUrl(
+      pickStr(row, [
+        "thumbnail",
+        "ad_image_ad_image_url",
+        "image_url",
+        "asset_image_url",
+        "thumbnail_url",
+      ])
+    )
   );
   r.videoUrl = pickStr(row, ["URL Video", "video_url"]);
   if (!r.creative) r.creative = youtubeThumb(r.videoUrl);

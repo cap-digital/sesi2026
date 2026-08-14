@@ -3,10 +3,22 @@
 import { useMemo, useState } from "react";
 import { useDash } from "./DataProvider";
 import { Badge, Card, EmptyState, PageHeader, Segmented } from "./ui";
-import { OBJECTIVE_METRIC, creatives as buildCreatives } from "@/lib/metrics";
+import {
+  OBJECTIVE_METRIC,
+  creatives as buildCreatives,
+  investmentOrNull,
+} from "@/lib/metrics";
 import type { Creative } from "@/lib/metrics";
 import { ctr } from "@/lib/metrics";
-import { fmtBRL, fmtCost, fmtDate, fmtInt, fmtPct } from "@/lib/format";
+import {
+  fmtBRL,
+  fmtBRLOrDash,
+  fmtCost,
+  fmtDate,
+  fmtInt,
+  fmtPct,
+} from "@/lib/format";
+import { driveImageFallback } from "@/lib/normalize";
 import type { Platform, Row } from "@/lib/types";
 import type { PlatformDef } from "@/lib/campaigns";
 
@@ -15,11 +27,20 @@ function Thumb({ c, accent }: { c: Creative; accent: string }) {
   const [broken, setBroken] = useState(false);
   const link = c.permalink ?? c.videoUrl;
 
-  /** thumbnail do YouTube: cai de oardefault para hqdefault antes de desistir */
+  /** cadeia de fallback antes de desistir do preview */
   const onError = () => {
+    // YouTube: proporção original → thumbnail padrão
     if (src?.includes("/oardefault.jpg")) {
       setSrc(src.replace("/oardefault.jpg", "/hqdefault.jpg"));
       return;
+    }
+    // Drive: lh3 → endpoint de thumbnail do próprio drive
+    if (src?.includes("lh3.googleusercontent.com/d/")) {
+      const alt = driveImageFallback(src);
+      if (alt) {
+        setSrc(alt);
+        return;
+      }
     }
     setBroken(true);
   };
@@ -120,7 +141,10 @@ export function CreativeCard({
 
   // não repete Impressões/Cliques quando eles já são a métrica-alvo do objetivo
   const cells: { label: string; value: string }[] = [
-    { label: "Investimento", value: fmtBRL(c.totals.investment) },
+    {
+      label: "Investimento",
+      value: fmtBRLOrDash(investmentOrNull(c.totals)),
+    },
     { label: "Impressões", value: fmtInt(c.totals.impressions) },
     { label: "Cliques", value: fmtInt(c.totals.clicks) },
     { label: "CTR", value: fmtPct(ctr(c.totals)) },

@@ -24,6 +24,8 @@ export interface Row {
   gender: string | null;
 
   investment: number; // coluna "Investimento" (nunca spend)
+  /** a origem não informou o investimento desta linha (célula de erro) */
+  investmentMissing: boolean;
   impressions: number;
   clicks: number;
   linkClicks: number;
@@ -41,6 +43,8 @@ export interface Row {
 
 export interface Totals {
   investment: number;
+  /** linhas cujo investimento a origem não informou */
+  investmentMissing: number;
   impressions: number;
   clicks: number;
   linkClicks: number;

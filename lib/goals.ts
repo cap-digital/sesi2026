@@ -3,7 +3,12 @@ import { daysBetween, monthOf } from "./dates";
 import { sumRows } from "./metrics";
 import type { Goal, Row } from "./types";
 
-export type GoalStatus = "ahead" | "ontrack" | "behind" | "nodata";
+export type GoalStatus =
+  | "ahead"
+  | "ontrack"
+  | "behind"
+  | "notstarted"
+  | "nodata";
 
 export interface GoalProgress {
   goal: Goal;
@@ -11,6 +16,8 @@ export interface GoalProgress {
   window: { start: string; end: string };
   achieved: number;
   spent: number;
+  /** a origem não informou o investimento de parte das linhas desta meta */
+  spentMissing: boolean;
   pctMetric: number;
   pctInvest: number;
   /** custo unitário realizado (investimento ÷ métrica DO PRÓPRIO objetivo) */
@@ -64,6 +71,7 @@ export function evaluateGoal(
 
   const achieved = totals[goal.metric] as number;
   const spent = totals.investment;
+  const spentMissing = spent === 0 && totals.investmentMissing > 0;
   const pctMetric = goal.target > 0 ? achieved / goal.target : 0;
   const pctInvest = goal.investment > 0 ? spent / goal.investment : 0;
 
@@ -79,7 +87,9 @@ export function evaluateGoal(
   const projected = elapsedDays > 0 ? (achieved / elapsedDays) * totalDays : 0;
 
   const hasData = totals.rows > 0;
-  let status: GoalStatus = "nodata";
+  // meta cujo mês ainda não começou não está "sem dados": não começou
+  const notStarted = today < window.start;
+  let status: GoalStatus = notStarted ? "notstarted" : "nodata";
   if (hasData) {
     const ratio = pacing > 0 ? pctMetric / pacing : 0;
     status = ratio >= 1.05 ? "ahead" : ratio >= 0.85 ? "ontrack" : "behind";
@@ -90,6 +100,7 @@ export function evaluateGoal(
     window,
     achieved,
     spent,
+    spentMissing,
     pctMetric,
     pctInvest,
     cost: achieved > 0 ? spent / achieved : NaN,
@@ -113,6 +124,7 @@ export const STATUS_LABEL: Record<GoalStatus, string> = {
   ahead: "Acima do ritmo",
   ontrack: "No ritmo",
   behind: "Abaixo do ritmo",
+  notstarted: "Não iniciada",
   nodata: "Sem dados",
 };
 
@@ -121,5 +133,6 @@ export const STATUS_COLOR: Record<GoalStatus, string> = {
   ahead: "#0ca30c",
   ontrack: "#0ca30c",
   behind: "#ec835a",
+  notstarted: "#898781",
   nodata: "#898781",
 };
