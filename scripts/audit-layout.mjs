@@ -17,6 +17,7 @@ const ROUTES = [
   "/jequie",
   "/jequie/meta",
   "/jequie/pmax",
+  "/jequie/ga4",
   "/jequie/criativos",
   "/jequie/metas",
 ];

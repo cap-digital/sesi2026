@@ -24,6 +24,7 @@ export type IconName =
   | "youtube"
   | "tiktok"
   | "google"
+  | "analytics"
   | "images";
 
 export function Icon({ name, className = "h-4 w-4" }: { name: IconName; className?: string }) {
@@ -78,6 +79,11 @@ export function Icon({ name, className = "h-4 w-4" }: { name: IconName; classNam
       <>
         <circle cx="12" cy="12" r="8.5" />
         <path d="M12 3.5v17M3.5 12h17" />
+      </>
+    ),
+    analytics: (
+      <>
+        <path d="M5.5 20V9.5M12 20V4.5M18.5 20v-7" />
       </>
     ),
     images: (

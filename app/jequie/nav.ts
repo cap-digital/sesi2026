@@ -16,6 +16,7 @@ export const JEQUIE_NAV: NavItem[] = [
     icon: "google",
     color: "#e0632c",
   },
+  { href: "/jequie/ga4", label: "GA4", icon: "analytics", color: "#e8710a" },
   { href: "/jequie/criativos", label: "Criativos", icon: "images" },
   { href: "/jequie/metas", label: "Progresso de meta", icon: "target" },
 ];

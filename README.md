@@ -6,7 +6,7 @@ home institucional SESI.
 | Rota | Campanha | Plataformas | Período |
 |---|---|---|---|
 | `/robotica` | Olimpíada Brasileira de Robótica 2026 | Meta Ads, Rede Display, YouTube, TikTok | 11/08 – 31/08/2026 |
-| `/jequie` | Inauguração Escola SESI Jequié | Meta Ads, Google PMAX | 12/08 – 30/09/2026 |
+| `/jequie` | Inauguração Escola SESI Jequié | Meta Ads, Google PMAX, GA4 | 12/08 – 30/09/2026 |
 
 ## Rodando
 
@@ -101,6 +101,26 @@ aparece.
 
 **Metas de meses futuros** — ficam com status "não iniciada" e saem da conta de
 "metas no ritmo", em vez de contarem como atrasadas.
+
+## GA4 (aba do Jequié)
+
+A aba `/jequie/ga4` lê a property **549923980** ("SESI - Jequié Matrículas").
+
+A chave da conta de serviço **nunca vai para o navegador**: `lib/ga4.ts` roda só
+no servidor, `app/api/ga4/route.ts` expõe o resultado já agregado, e o
+componente busca `/api/ga4?start=…&end=…`. As três variáveis ficam em
+`.env.local` (e nas env vars da Vercel) — ver `.env.local.example`. Autenticação
+por JWT + REST em `analyticsdata.googleapis.com`, mais leve em serverless que o
+cliente gRPC.
+
+O **evento de conversão em destaque sai dos dados**, não de uma constante: é a
+conversão marcada no GA4 com mais volume (hoje `Envio de Form`). Se outro evento
+for marcado como conversão na property, o destaque acompanha sozinho; se
+nenhum estiver marcado, a aba avisa em vez de escolher por conta própria.
+
+```bash
+node scripts/ga4-discover.mjs   # lista eventos, conversões, canais e páginas
+```
 
 ## O que o painel absorve sozinho
 

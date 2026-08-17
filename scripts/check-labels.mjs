@@ -8,6 +8,7 @@ const PAGES = [
   "/robotica/display",
   "/robotica/youtube",
   "/jequie",
+  "/jequie/ga4",
 ];
 const VIEWPORTS = [
   { name: "z67 ", w: 2039, h: 1146 },
