@@ -36,14 +36,6 @@ export interface Ga4DailyPoint {
   primaryEvent: number;
 }
 
-export interface Ga4Channel {
-  channel: string;
-  sessions: number;
-  users: number;
-  keyEvents: number;
-  primaryEvent: number;
-}
-
 export interface Ga4Event {
   name: string;
   count: number;
@@ -61,7 +53,6 @@ export interface Ga4Report {
   range: Ga4Range;
   totals: Ga4Totals;
   daily: Ga4DailyPoint[];
-  channels: Ga4Channel[];
   events: Ga4Event[];
   pages: Ga4Page[];
   /** evento de conversão em destaque, escolhido pelos dados (não fixado) */
@@ -220,8 +211,7 @@ export async function fetchGa4Report(range: Ga4Range): Promise<Ga4Report> {
       }
     : {};
 
-  const [totalRows, dailyRows, primaryDailyRows, channelRows, primaryChannelRows, pageRows] =
-    await Promise.all([
+  const [totalRows, dailyRows, primaryDailyRows, pageRows] = await Promise.all([
       runReport({
         dateRanges,
         metrics: [
@@ -259,32 +249,12 @@ export async function fetchGa4Report(range: Ga4Range): Promise<Ga4Report> {
         : Promise.resolve([]),
       runReport({
         dateRanges,
-        dimensions: [{ name: "sessionDefaultChannelGroup" }],
-        metrics: [
-          { name: "sessions" },
-          { name: "totalUsers" },
-          { name: "keyEvents" },
-        ],
-        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
-        limit: 25,
-      }),
-      primaryName
-        ? runReport({
-            dateRanges,
-            dimensions: [{ name: "sessionDefaultChannelGroup" }],
-            metrics: [{ name: "eventCount" }],
-            ...primaryFilter,
-            limit: 25,
-          })
-        : Promise.resolve([]),
-      runReport({
-        dateRanges,
         dimensions: [{ name: "pagePath" }],
         metrics: [{ name: "screenPageViews" }, { name: "totalUsers" }],
         orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
         limit: 15,
       }),
-    ]);
+  ]);
 
   const t = totalRows[0];
   const totals: Ga4Totals = {
@@ -315,22 +285,6 @@ export async function fetchGa4Report(range: Ga4Range): Promise<Ga4Report> {
     };
   });
 
-  const primaryByChannel = new Map<string, number>();
-  for (const row of primaryChannelRows) {
-    primaryByChannel.set(dim(row, 0), met(row, 0));
-  }
-
-  const channels: Ga4Channel[] = channelRows.map((row) => {
-    const channel = dim(row, 0) || "Não atribuído";
-    return {
-      channel,
-      sessions: met(row, 0),
-      users: met(row, 1),
-      keyEvents: met(row, 2),
-      primaryEvent: primaryByChannel.get(dim(row, 0)) ?? 0,
-    };
-  });
-
   const pages: Ga4Page[] = pageRows.map((row) => ({
     path: dim(row, 0),
     views: met(row, 0),
@@ -343,7 +297,6 @@ export async function fetchGa4Report(range: Ga4Range): Promise<Ga4Report> {
     range,
     totals,
     daily,
-    channels,
     events,
     pages,
     primaryEvent: primary

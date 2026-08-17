@@ -118,6 +118,10 @@ conversão marcada no GA4 com mais volume (hoje `Envio de Form`). Se outro event
 for marcado como conversão na property, o destaque acompanha sozinho; se
 nenhum estiver marcado, a aba avisa em vez de escolher por conta própria.
 
+A aba mostra o destaque da conversão, KPIs de audiência, evolução diária e as
+tabelas de eventos e páginas. Canais de entrada foram removidos da tela — o
+número segue disponível pelo script de descoberta:
+
 ```bash
 node scripts/ga4-discover.mjs   # lista eventos, conversões, canais e páginas
 ```

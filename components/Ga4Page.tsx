@@ -5,7 +5,6 @@ import { useDash } from "./DataProvider";
 import { StackedBars, type Series } from "./charts";
 import {
   Badge,
-  Card,
   ChartCard,
   DataTable,
   EmptyState,
@@ -13,12 +12,11 @@ import {
   KpiCard,
   LoadingBlock,
   PageHeader,
-  SectionTitle,
   Segmented,
   StatGrid,
 } from "./ui";
 import { fmtCompact, fmtDate, fmtInt, fmtPct } from "@/lib/format";
-import type { Ga4Channel, Ga4Event, Ga4Page as Ga4PageRow, Ga4Report } from "@/lib/ga4";
+import type { Ga4Event, Ga4Page as Ga4PageRow, Ga4Report } from "@/lib/ga4";
 
 /** 83 → "1m 23s" */
 function fmtDuration(seconds: number) {
@@ -66,29 +64,34 @@ function ConversionBanner({ report }: { report: Ga4Report }) {
           "linear-gradient(120deg, var(--brand-deep) 0%, var(--brand) 78%)",
       }}
     >
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-5">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/75">
             Conversão do site
           </p>
-          <p className="mt-2 truncate text-[15px] font-semibold text-white">
+          <p className="mt-1.5 truncate text-[14px] font-semibold text-white/90">
             {p.name}
           </p>
-          <p className="tnum mt-2 text-[38px] font-semibold leading-none text-white">
+          <p className="tnum mt-2.5 text-[40px] font-semibold leading-none text-white">
             {fmtInt(p.count)}
           </p>
-          <p className="mt-1.5 text-[11px] text-white/70">
+          <p className="mt-2 text-[11px] text-white/70">
             envios registrados no período
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-x-5 gap-y-3.5 sm:grid-cols-4">
+
+        {/* stats centralizados na altura do número, separados por divisores */}
+        <div className="flex w-full flex-wrap items-center gap-y-5 sm:w-auto sm:flex-nowrap sm:divide-x sm:divide-white/20">
           {stats.map((s) => (
-            <div key={s.label} className="min-w-0">
-              <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-white/60">
-                {s.label}
-              </p>
-              <p className="tnum mt-1 truncate text-[19px] font-semibold leading-none text-white">
+            <div
+              key={s.label}
+              className="w-1/2 min-w-0 text-left sm:w-auto sm:px-6 sm:text-center sm:first:pl-0 sm:last:pr-0"
+            >
+              <p className="tnum text-[24px] font-semibold leading-none text-white">
                 {s.value}
+              </p>
+              <p className="mt-2 text-[10px] font-medium uppercase leading-snug tracking-[0.08em] text-white/60">
+                {s.label}
               </p>
             </div>
           ))}
@@ -216,7 +219,7 @@ export function Ga4Page() {
     <PageHeader
       eyebrow={campaign.subtitle}
       title="Google Analytics 4"
-      description="Comportamento no site da campanha: sessões, canais de entrada e envios do formulário."
+      description="Comportamento no site da campanha: audiência, engajamento e envios do formulário."
     />
   );
 
@@ -289,53 +292,6 @@ export function Ga4Page() {
         ) : (
           <>
             <DailyCard report={report} />
-
-            <section>
-              <SectionTitle
-                title="Canais de entrada"
-                hint="de onde vem o acesso e onde a conversão acontece"
-              />
-              <Card className="p-3.5 sm:p-4">
-                <DataTable
-                  columns={[
-                    {
-                      key: "channel",
-                      header: "Canal",
-                      render: (r: Ga4Channel) => r.channel,
-                    },
-                    {
-                      key: "sessions",
-                      header: "Sessões",
-                      align: "right",
-                      render: (r: Ga4Channel) => fmtInt(r.sessions),
-                    },
-                    {
-                      key: "users",
-                      header: "Usuários",
-                      align: "right",
-                      render: (r: Ga4Channel) => fmtInt(r.users),
-                    },
-                    {
-                      key: "primary",
-                      header: "Envios",
-                      align: "right",
-                      render: (r: Ga4Channel) => fmtInt(r.primaryEvent),
-                    },
-                    {
-                      key: "rate",
-                      header: "Taxa",
-                      align: "right",
-                      render: (r: Ga4Channel) =>
-                        r.sessions > 0
-                          ? fmtPct(r.primaryEvent / r.sessions, 1)
-                          : "—",
-                    },
-                  ]}
-                  rows={report.channels}
-                  caption="Sessões e envios por canal"
-                />
-              </Card>
-            </section>
 
             <div className="grid gap-3 lg:grid-cols-2">
               <ChartCard title="Eventos" hint="todos os eventos coletados no período">
