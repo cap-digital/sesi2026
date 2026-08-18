@@ -316,6 +316,40 @@ const MAPPERS: Record<string, { platform: Platform; fn: (r: Raw) => Row }> = {
   pmax: { platform: "pmax", fn: fromPmax },
 };
 
+/**
+ * Peças em que o preview da plataforma vem errado, servidas do arquivo local.
+ *
+ * O casamento é por plataforma + objetivo + nome do anúncio, de propósito: o
+ * mesmo anúncio roda em mais de um conjunto, e todos devem receber a troca.
+ * Não entra o conjunto na chave justamente para não precisar repetir a regra.
+ */
+const CREATIVE_OVERRIDES: {
+  platform: Platform;
+  objective?: Objective;
+  ad: string;
+  src: string;
+}[] = [
+  {
+    // o Meta devolve aqui um proxy de imagem do sympla.com.br
+    platform: "meta",
+    objective: "Alcance",
+    ad: "[AD 01] NOVA ESCOLA - 13.08",
+    src: "/criativos/meta-alcance-nova-escola-13-08.png",
+  },
+];
+
+function applyCreativeOverride(row: Row): Row {
+  const ad = row.ad.trim().toUpperCase();
+  const hit = CREATIVE_OVERRIDES.find(
+    (o) =>
+      o.platform === row.platform &&
+      (!o.objective || o.objective === row.objective) &&
+      o.ad.toUpperCase() === ad
+  );
+  if (hit) row.creative = hit.src;
+  return row;
+}
+
 export function normalize(
   payload: Record<string, unknown>,
   expected: Platform[]
@@ -335,7 +369,7 @@ export function normalize(
     seen.add(mapper.platform);
     for (const raw of value as Raw[]) {
       if (!raw || typeof raw !== "object") continue;
-      const row = mapper.fn(raw);
+      const row = applyCreativeOverride(mapper.fn(raw));
       if (!row.date) continue;
       rows.push(row);
     }

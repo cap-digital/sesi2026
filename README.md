@@ -90,6 +90,13 @@ Investimento. Nesse caso o painel mostra "—", nunca R$ 0,00, e avisa na
 campanha afetada: a entrega segue contabilizada, mas o custo fica indisponível
 até o valor ser corrigido na origem.
 
+**Preview de peça errado na plataforma** — o Meta devolve, para
+`[AD 01] NOVA ESCOLA - 13.08` no objetivo Alcance de Jequié, um proxy de imagem
+do sympla.com.br. `CREATIVE_OVERRIDES` em `lib/normalize.ts` serve o arquivo
+local em vez disso. O casamento é por plataforma + objetivo + nome do anúncio,
+sem o conjunto: o mesmo anúncio roda em dois conjuntos e ambos recebem a troca
+com uma regra só.
+
 **PMAX** — a peça vem como link de compartilhamento do Drive, que devolve HTML.
 `driveImage()` converte para o endpoint de imagem direta (`lh3` com fallback
 para `drive.google.com/thumbnail`).
