@@ -218,6 +218,17 @@ export const JEQUIE: CampaignDef = {
       target: 1500,
       investment: 4500,
     },
+    {
+      id: "set-meta-trafego-rmkt",
+      label: "Meta · Tráfego RMKT",
+      platform: "meta",
+      objective: "Tráfego RMKT",
+      month: 9,
+      metric: "clicks",
+      metricLabel: "Cliques",
+      target: 857,
+      investment: 3000,
+    },
   ],
 };
 

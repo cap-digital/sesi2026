@@ -50,11 +50,14 @@ mistura objetivos (o bloco "Taxas da plataforma"), isso está indicado no cartã
 | Alcance | Impressões | CPM |
 | Engajamento | `actions_post_engagement` | CPE |
 | Tráfego | Cliques | CPC |
+| Tráfego RMKT | Cliques | CPC |
 | Views | `video_trueview_views` (YouTube) / thruplay (Meta) | CPV |
 | Performance Max | Cliques | CPC |
 
 O objetivo sai do nome da campanha. TikTok e Rede Display são compra por
 impressão: quando o nome não traz palavra-chave, valem como Alcance.
+Remarketing é objetivo à parte (`RMKT`, `REMARKETING` ou `RETARGETING` no nome):
+tem verba e meta próprias, e nunca entra na conta do tráfego de prospecção.
 
 **Colunas por plataforma** — cada origem nomeia as coisas do seu jeito;
 `lib/normalize.ts` converte tudo para um formato único.

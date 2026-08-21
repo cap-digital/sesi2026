@@ -116,6 +116,9 @@ function detectObjective(campaign: string, platform: Platform): Objective {
   if (platform === "pmax") return "Performance Max";
   if (/ALCANCE|REACH/.test(c)) return "Alcance";
   if (/ENGAJAMENTO|ENGAGEMENT/.test(c)) return "Engajamento";
+  // antes do tráfego: o remarketing tem meta própria e não pode cair no mesmo
+  // balde da prospecção, senão as duas metas contariam as mesmas linhas
+  if (/RMKT|REMARKETING|RETARGETING/.test(c)) return "Tráfego RMKT";
   if (/TR[ÁA]FEGO|TRAFFIC|LINK.?CLICK/.test(c)) return "Tráfego";
   if (/VIEW|VISUALIZA|VIDEO/.test(c)) return "Views";
   if (/CONVERS|LEAD|CADASTR|MATR[ÍI]CULA|INSCRI/.test(c)) return "Conversão";

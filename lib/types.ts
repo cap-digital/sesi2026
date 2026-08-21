@@ -4,6 +4,8 @@ export type Objective =
   | "Alcance"
   | "Engajamento"
   | "Tráfego"
+  /** remarketing: verba e meta próprias, nunca somadas ao tráfego de prospecção */
+  | "Tráfego RMKT"
   | "Views"
   | "Conversão"
   | "Performance Max"

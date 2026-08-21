@@ -103,6 +103,13 @@ export const OBJECTIVE_METRIC: Record<
     cost: cpc,
     costHint: "Investimento ÷ cliques (só campanhas de tráfego)",
   },
+  "Tráfego RMKT": {
+    metric: "clicks",
+    metricLabel: "Cliques",
+    costLabel: "CPC",
+    cost: cpc,
+    costHint: "Investimento ÷ cliques (só campanhas de remarketing)",
+  },
   Views: {
     metric: "views",
     metricLabel: "Visualizações",
@@ -163,6 +170,7 @@ export function byObjective(rows: Row[]): ObjectiveSlice[] {
     "Alcance",
     "Engajamento",
     "Tráfego",
+    "Tráfego RMKT",
     "Views",
     "Conversão",
     "Performance Max",

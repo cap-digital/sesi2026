@@ -37,13 +37,15 @@ import type { Objective, Row } from "@/lib/types";
  * objetivo, nunca a posição no ranking. Conversão (magenta) fica na faixa de
  * aviso de CVD contra Views (teal): é aceitável porque todo gráfico daqui traz
  * legenda e rótulo direto, e os dois objetivos raramente coexistem na mesma
- * plataforma.
+ * plataforma. O bronze do remarketing separa do laranja de engajamento com
+ * folga (ΔE 10,3 em protanopia, 16,1 em visão normal).
  */
 const OBJECTIVE_COLORS: Record<Objective, string> = {
   Alcance: "#2a78d6",
   Engajamento: "#d95926",
   Views: "#12876a",
   Tráfego: "#4a3aa7",
+  "Tráfego RMKT": "#8a4b12",
   Conversão: "#a03a86",
   "Performance Max": "#2a78d6",
   Outros: "#898781",
