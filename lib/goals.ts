@@ -1,5 +1,5 @@
 import type { CampaignDef } from "./campaigns";
-import { daysBetween, monthOf } from "./dates";
+import { daysBetween } from "./dates";
 import { sumRows } from "./metrics";
 import type { Goal, Row } from "./types";
 
@@ -32,28 +32,50 @@ export interface GoalProgress {
   hasData: boolean;
 }
 
+/**
+ * Janela de vigência da meta, em datas.
+ *
+ * Meta mensal usa a janela declarada na campanha; sem declaração, cai no mês
+ * civil recortado pelo período da campanha. Em nenhum caso o nome da campanha
+ * entra na conta: uma renomeação na origem ("[AGOSTO- 2026]" que segue
+ * entregando em setembro) não desloca uma única linha de mês.
+ */
 export function goalWindow(campaign: CampaignDef, goal: Goal) {
   if (!goal.month) return { ...campaign.window };
-  const y = campaign.window.start.slice(0, 4);
-  const mm = String(goal.month).padStart(2, "0");
-  const last = new Date(Date.UTC(Number(y), goal.month, 0))
-    .toISOString()
-    .slice(8, 10);
-  const start = `${y}-${mm}-01`;
-  const end = `${y}-${mm}-${last}`;
+
+  const declared = campaign.months?.find((m) => m.month === goal.month);
+  let start: string;
+  let end: string;
+  if (declared) {
+    start = declared.start;
+    end = declared.end;
+  } else {
+    const y = campaign.window.start.slice(0, 4);
+    const mm = String(goal.month).padStart(2, "0");
+    const last = new Date(Date.UTC(Number(y), goal.month, 0))
+      .toISOString()
+      .slice(8, 10);
+    start = `${y}-${mm}-01`;
+    end = `${y}-${mm}-${last}`;
+  }
+
   return {
     start: start > campaign.window.start ? start : campaign.window.start,
     end: end < campaign.window.end ? end : campaign.window.end,
   };
 }
 
+/**
+ * Linhas que contam para a meta: plataforma, objetivo e — o ponto crítico — a
+ * data da entrega dentro da janela do mês. A coluna Date é a única origem do
+ * mês de referência.
+ */
 export function rowsForGoal(rows: Row[], campaign: CampaignDef, goal: Goal) {
   const w = goalWindow(campaign, goal);
   return rows.filter(
     (r) =>
       r.platform === goal.platform &&
       (!goal.objective || r.objective === goal.objective) &&
-      (!goal.month || monthOf(r.date) === goal.month) &&
       r.date >= w.start &&
       r.date <= w.end
   );
@@ -86,7 +108,9 @@ export function evaluateGoal(
   const pacing = elapsedDays / totalDays;
   const projected = elapsedDays > 0 ? (achieved / elapsedDays) * totalDays : 0;
 
-  const hasData = totals.rows > 0;
+  // linha existente mas zerada é o rastro de uma campanha que já parou: não é
+  // entrega, e classificar isso como "abaixo do ritmo" mentiria sobre o mês
+  const hasData = totals.rows > 0 && (achieved > 0 || spent > 0);
   // meta cujo mês ainda não começou não está "sem dados": não começou
   const notStarted = today < window.start;
   let status: GoalStatus = notStarted ? "notstarted" : "nodata";

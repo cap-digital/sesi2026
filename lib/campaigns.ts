@@ -9,6 +9,20 @@ export interface PlatformDef {
   highlight: "impressions" | "clicks" | "engagement" | "views";
 }
 
+/**
+ * Janela real de um mês de referência, em datas.
+ *
+ * O mês de uma linha vem SEMPRE da coluna Date — nunca do nome da campanha.
+ * A origem mistura os dois: a mesma campanha "[AGOSTO/SETEMBRO- 2026]" atende
+ * dois meses, e a "[PMAX] [...] [AGOSTO- 2026]" segue entregando em setembro.
+ * Declarar a janela aqui deixa a contagem imune a qualquer renomeação.
+ */
+export interface MonthWindow {
+  month: number;
+  start: string;
+  end: string;
+}
+
 export interface CampaignDef {
   id: "robotica" | "jequie";
   name: string;
@@ -19,6 +33,8 @@ export interface CampaignDef {
   goals: Goal[];
   /** metas mensais? (Jequié) */
   monthly: boolean;
+  /** janelas dos meses de referência, quando as metas são mensais */
+  months?: MonthWindow[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -124,6 +140,12 @@ export const JEQUIE: CampaignDef = {
   endpoint: "SesiJequie2026",
   window: { start: "2026-08-12", end: "2026-09-30" },
   monthly: true,
+  // agosto termina em 31/08 e setembro começa em 01/09: o corte é a data da
+  // entrega, não o rótulo do mês no nome da campanha
+  months: [
+    { month: 8, start: "2026-08-13", end: "2026-08-31" },
+    { month: 9, start: "2026-09-01", end: "2026-09-30" },
+  ],
   platforms: [
     {
       id: "meta",

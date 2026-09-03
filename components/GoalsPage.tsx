@@ -31,11 +31,15 @@ export function GoalsPage() {
     ).length
   );
 
-  // metas de meses futuros não entram na conta de ritmo
-  const started = progress.filter((g) => g.status !== "notstarted");
+  // só entra na conta de ritmo a meta que já começou e já entregou: mês futuro
+  // e campanha ainda sem entrega não são "fora do ritmo"
+  const started = progress.filter(
+    (g) => g.status !== "notstarted" && g.status !== "nodata"
+  );
   const onTrack = started.filter(
     (g) => g.status === "ahead" || g.status === "ontrack"
   ).length;
+  const pending = progress.length - started.length;
 
   return (
     <>
@@ -66,9 +70,7 @@ export function GoalsPage() {
             label="Metas no ritmo"
             value={`${onTrack} de ${started.length}`}
             hint={
-              started.length < progress.length
-                ? `${progress.length - started.length} ainda não iniciada(s)`
-                : undefined
+              pending ? `${pending} ainda sem entrega` : undefined
             }
           />
         </StatGrid>
