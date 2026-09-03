@@ -173,6 +173,9 @@ export const JEQUIE: CampaignDef = {
       metricLabel: "Cliques",
       target: 1429,
       investment: 5000,
+      // Google Ads reporta 1.775 cliques na campanha em agosto; a base por
+      // asset soma 1.506, diferença de 269 cliques sem asset atribuído
+      platformTotal: 1775,
     },
     {
       id: "ago-meta-alcance",
