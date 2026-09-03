@@ -12,6 +12,7 @@ import type { CampaignDef } from "@/lib/campaigns";
 import { PRESETS, daysBetween, matchPreset, type Range } from "@/lib/dates";
 import { sumRows } from "@/lib/metrics";
 import { normalize } from "@/lib/normalize";
+import { reconcileDataset } from "@/lib/reconcile";
 import type { Dataset, Platform, Row, Totals } from "@/lib/types";
 
 interface Ctx {
@@ -81,7 +82,17 @@ export function DataProvider({
         if (!res.ok || json?.error) {
           throw new Error(json?.error ?? `HTTP ${res.status}`);
         }
-        setDataset(normalize(json, campaign.platforms.map((p) => p.id)));
+        // reconcilia antes de entrar no estado: metas, abas de plataforma e
+        // criativos passam a ler o mesmo total
+        setDataset(
+          reconcileDataset(
+            normalize(
+              json,
+              campaign.platforms.map((p) => p.id)
+            ),
+            campaign
+          )
+        );
         setStale(json?._stale === true);
         setError(null);
       } catch (err) {

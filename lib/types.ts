@@ -77,11 +77,21 @@ export interface Dataset {
   /** blocos da resposta que o painel ainda não sabe ler — nada é descartado
    *  em silêncio: a tela avisa para que o mapeamento seja adicionado */
   unknownSources: { key: string; rows: number }[];
+  /** reconciliações aplicadas às linhas (ver lib/reconcile.ts) */
+  reconciled?: {
+    label: string;
+    metric: string;
+    measured: number;
+    total: number;
+    delta: number;
+  }[];
 }
 
 export type GoalMetric =
   | "impressions"
   | "clicks"
+  /** actions_link_click do Meta — clique no link, não clique em qualquer área */
+  | "linkClicks"
   | "engagement"
   | "views"
   | "investment";
@@ -98,12 +108,4 @@ export interface Goal {
   metricLabel: string;
   target: number;
   investment: number;
-  /**
-   * Total realizado segundo o relatório de campanha da plataforma, para mês já
-   * encerrado. O PMAX entrega a base em nível de asset e parte dos cliques não
-   * recebe atribuição a asset nenhum, então a soma das linhas fica abaixo do
-   * total da campanha no Google Ads. Declarado aqui, este número manda na meta:
-   * a entrega contratada é a da campanha, não a do recorte por peça.
-   */
-  platformTotal?: number;
 }

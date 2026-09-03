@@ -1,3 +1,4 @@
+import type { Reconciliation } from "./reconcile";
 import type { Goal, Platform } from "./types";
 
 export interface PlatformDef {
@@ -35,6 +36,8 @@ export interface CampaignDef {
   monthly: boolean;
   /** janelas dos meses de referência, quando as metas são mensais */
   months?: MonthWindow[];
+  /** reconciliações com o total informado pela plataforma */
+  reconcile?: Reconciliation[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -146,6 +149,17 @@ export const JEQUIE: CampaignDef = {
     { month: 8, start: "2026-08-13", end: "2026-08-31" },
     { month: 9, start: "2026-09-01", end: "2026-09-30" },
   ],
+  // o Google Ads reporta 1.775 cliques na campanha PMAX em agosto; a base por
+  // asset soma 1.506, e os 269 de diferença não têm asset atribuído na origem
+  reconcile: [
+    {
+      label: "PMAX · agosto",
+      platform: "pmax",
+      metric: "clicks",
+      window: { start: "2026-08-13", end: "2026-08-31" },
+      total: 1775,
+    },
+  ],
   platforms: [
     {
       id: "meta",
@@ -173,9 +187,6 @@ export const JEQUIE: CampaignDef = {
       metricLabel: "Cliques",
       target: 1429,
       investment: 5000,
-      // Google Ads reporta 1.775 cliques na campanha em agosto; a base por
-      // asset soma 1.506, diferença de 269 cliques sem asset atribuído
-      platformTotal: 1775,
     },
     {
       id: "ago-meta-alcance",
@@ -194,8 +205,8 @@ export const JEQUIE: CampaignDef = {
       platform: "meta",
       objective: "Tráfego",
       month: 8,
-      metric: "clicks",
-      metricLabel: "Cliques",
+      metric: "linkClicks",
+      metricLabel: "Cliques no link",
       target: 1333,
       investment: 4000,
     },
@@ -238,8 +249,8 @@ export const JEQUIE: CampaignDef = {
       platform: "meta",
       objective: "Tráfego",
       month: 9,
-      metric: "clicks",
-      metricLabel: "Cliques",
+      metric: "linkClicks",
+      metricLabel: "Cliques no link",
       target: 1500,
       investment: 4500,
     },
@@ -249,8 +260,8 @@ export const JEQUIE: CampaignDef = {
       platform: "meta",
       objective: "Tráfego RMKT",
       month: 9,
-      metric: "clicks",
-      metricLabel: "Cliques",
+      metric: "linkClicks",
+      metricLabel: "Cliques no link",
       target: 857,
       investment: 3000,
     },

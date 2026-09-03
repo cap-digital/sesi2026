@@ -15,8 +15,6 @@ export interface GoalProgress {
   /** janela de vigência da meta (mês recortado pela campanha, ou a campanha toda) */
   window: { start: string; end: string };
   achieved: number;
-  /** soma das linhas da base, antes da reconciliação com a plataforma */
-  measured: number;
   spent: number;
   /** a origem não informou o investimento de parte das linhas desta meta */
   spentMissing: boolean;
@@ -93,10 +91,7 @@ export function evaluateGoal(
   const scoped = rowsForGoal(rows, campaign, goal);
   const totals = sumRows(scoped);
 
-  // a soma das linhas é o recorte por peça; quando a plataforma informa o total
-  // da campanha para um mês fechado, é ele que vale
-  const measured = totals[goal.metric] as number;
-  const achieved = goal.platformTotal ?? measured;
+  const achieved = totals[goal.metric] as number;
   const spent = totals.investment;
   const spentMissing = spent === 0 && totals.investmentMissing > 0;
   const pctMetric = goal.target > 0 ? achieved / goal.target : 0;
@@ -128,7 +123,6 @@ export function evaluateGoal(
     goal,
     window,
     achieved,
-    measured,
     spent,
     spentMissing,
     pctMetric,
