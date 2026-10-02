@@ -140,6 +140,22 @@ export const OBJECTIVE_METRIC: Record<
   },
 };
 
+/**
+ * Métrica-alvo com a régua de clique da plataforma: no Meta o contratado em
+ * tráfego e tráfego RMKT é o clique no link, não o clique em qualquer área.
+ */
+export function objectiveMetric(objective: Objective, linkClicks = false) {
+  const def = OBJECTIVE_METRIC[objective];
+  if (!linkClicks || def.metric !== "clicks") return def;
+  return {
+    metric: "linkClicks" as const,
+    metricLabel: "Cliques no link",
+    costLabel: "CPC no link",
+    cost: cpcLink,
+    costHint: def.costHint.replace("÷ cliques", "÷ cliques no link"),
+  };
+}
+
 export interface ObjectiveSlice {
   objective: Objective;
   totals: Totals;
@@ -156,7 +172,10 @@ export interface ObjectiveSlice {
  * investimento. Objetivo não reconhecido ("Outros") é separado por campanha:
  * dois tipos novos e diferentes nunca dividem o mesmo cartão de custo.
  */
-export function byObjective(rows: Row[]): ObjectiveSlice[] {
+export function byObjective(
+  rows: Row[],
+  linkClicks = false
+): ObjectiveSlice[] {
   const groups = new Map<string, Row[]>();
   const keyOf = (r: Row) =>
     r.objective === "Outros" ? `Outros|${r.campaign}` : r.objective;
@@ -184,7 +203,7 @@ export function byObjective(rows: Row[]): ObjectiveSlice[] {
     .map(([, list]) => {
       const objective = list[0].objective;
       const totals = sumRows(list);
-      const def = OBJECTIVE_METRIC[objective];
+      const def = objectiveMetric(objective, linkClicks);
       return {
         objective,
         totals,

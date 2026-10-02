@@ -17,13 +17,14 @@ import {
 } from "./ui";
 import { StackedBars, RankBars, type Series } from "./charts";
 import {
-  OBJECTIVE_METRIC,
   byObjective,
   cpm,
   ctr,
   daily,
   groupBy,
   investmentOrNull,
+  linkCtr,
+  objectiveMetric,
   sumRows,
 } from "@/lib/metrics";
 import type { ObjectiveSlice } from "@/lib/metrics";
@@ -53,10 +54,13 @@ export function VolumeKpis({
   accent,
   extra = [],
   items: custom,
+  linkClicks = false,
 }: {
   totals: Totals;
   accent: string;
   extra?: { label: string; value: string; hint?: string }[];
+  /** mede clique no link (Meta) em vez de clique em qualquer área */
+  linkClicks?: boolean;
   /** substitui o conjunto padrão de KPIs (usado quando a plataforma pede
    *  outras métricas de destaque) */
   items?: { label: string; value: string; hint?: string }[];
@@ -65,8 +69,12 @@ export function VolumeKpis({
     custom ?? [
       { label: "Investimento", value: fmtBRLOrDash(investmentOrNull(totals)) },
       { label: "Impressões", value: fmtInt(totals.impressions) },
-      { label: "Cliques", value: fmtInt(totals.clicks) },
-      { label: "CTR", value: fmtPct(ctr(totals)) },
+      linkClicks
+        ? { label: "Cliques no link", value: fmtInt(totals.linkClicks) }
+        : { label: "Cliques", value: fmtInt(totals.clicks) },
+      linkClicks
+        ? { label: "CTR no link", value: fmtPct(linkCtr(totals)) }
+        : { label: "CTR", value: fmtPct(ctr(totals)) },
       ...extra,
     ];
   const cols = items.length >= 6 ? 6 : items.length === 5 ? 5 : 4;
@@ -93,9 +101,11 @@ export function VolumeKpis({
 function ObjectiveCard({
   slice,
   color,
+  linkClicks,
 }: {
   slice: ObjectiveSlice;
   color: string;
+  linkClicks: boolean;
 }) {
   const t = slice.totals;
   return (
@@ -127,9 +137,13 @@ function ObjectiveCard({
           },
           // não repete a métrica-alvo (ex.: impressões no objetivo de alcance)
           slice.primaryLabel === "Impressões"
-            ? { label: "Cliques", value: fmtInt(t.clicks) }
+            ? linkClicks
+              ? { label: "Cliques no link", value: fmtInt(t.linkClicks) }
+              : { label: "Cliques", value: fmtInt(t.clicks) }
             : { label: "Impressões", value: fmtInt(t.impressions) },
-          { label: "CTR", value: fmtPct(ctr(t)) },
+          linkClicks
+            ? { label: "CTR no link", value: fmtPct(linkCtr(t)) }
+            : { label: "CTR", value: fmtPct(ctr(t)) },
         ].map((row) => (
           <div key={row.label}>
             <dt className="uppercase tracking-wide text-muted">{row.label}</dt>
@@ -146,11 +160,16 @@ function ObjectiveCard({
 export function ObjectiveEfficiency({
   rows,
   color,
+  linkClicks = false,
 }: {
   rows: Row[];
   color: string;
+  linkClicks?: boolean;
 }) {
-  const slices = useMemo(() => byObjective(rows), [rows]);
+  const slices = useMemo(
+    () => byObjective(rows, linkClicks),
+    [rows, linkClicks]
+  );
   if (!slices.length) {
     return (
       <EmptyState
@@ -163,7 +182,12 @@ export function ObjectiveEfficiency({
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {slices.map((s) => (
-        <ObjectiveCard key={s.objective} slice={s} color={color} />
+        <ObjectiveCard
+          key={s.objective}
+          slice={s}
+          color={color}
+          linkClicks={linkClicks}
+        />
       ))}
     </div>
   );
@@ -173,7 +197,13 @@ export function ObjectiveEfficiency({
 /* Série diária com seletor de métrica                                 */
 /* ------------------------------------------------------------------ */
 
-type MetricId = "investment" | "impressions" | "clicks" | "engagement" | "views";
+type MetricId =
+  | "investment"
+  | "impressions"
+  | "clicks"
+  | "linkClicks"
+  | "engagement"
+  | "views";
 
 const METRIC_DEFS: Record<
   MetricId,
@@ -195,6 +225,11 @@ const METRIC_DEFS: Record<
     labelFormat: fmtCompact,
   },
   clicks: { label: "Cliques", format: fmtCompact, labelFormat: fmtCompact },
+  linkClicks: {
+    label: "Cliques no link",
+    format: fmtCompact,
+    labelFormat: fmtCompact,
+  },
   engagement: {
     label: "Engajamento",
     format: fmtCompact,
@@ -213,22 +248,28 @@ export function DailyMetricCard({
   seriesKey,
   title = "Evolução diária",
   hint,
+  linkClicks = false,
 }: {
   rows: Row[];
   series: Series[];
   seriesKey: (r: Row) => string;
   title?: string;
   hint?: string;
+  linkClicks?: boolean;
 }) {
   const { days, refreshing } = useDash();
   const totals = useMemo(() => sumRows(rows), [rows]);
 
   const available = useMemo(() => {
-    const ids: MetricId[] = ["investment", "impressions", "clicks"];
+    const ids: MetricId[] = [
+      "investment",
+      "impressions",
+      linkClicks ? "linkClicks" : "clicks",
+    ];
     if (totals.engagement > 0) ids.push("engagement");
     if (totals.views > 0) ids.push("views");
     return ids;
-  }, [totals]);
+  }, [totals, linkClicks]);
 
   const [metric, setMetric] = useState<MetricId>("investment");
   const active = available.includes(metric) ? metric : "investment";
@@ -811,13 +852,15 @@ export function CampaignTable({
   variant?: Platform;
 }) {
   const videoView = variant === "tiktok";
+  // no Meta o clique contratado é o clique no link
+  const linkClicks = variant === "meta";
   const list = useMemo(() => {
     const map = groupBy(rows, (r) => r.campaign);
     return [...map.entries()]
       .map(([campaign, list]) => {
         const totals = sumRows(list);
         const objective = list[0].objective;
-        const def = OBJECTIVE_METRIC[objective];
+        const def = objectiveMetric(objective, linkClicks);
         return {
           campaign,
           objective,
@@ -829,7 +872,7 @@ export function CampaignTable({
         };
       })
       .sort((a, b) => b.totals.investment - a.totals.investment);
-  }, [rows]);
+  }, [rows, linkClicks]);
 
   if (!list.length) return <EmptyState icon="chart" title="Sem campanhas no período" />;
 
@@ -851,10 +894,14 @@ export function CampaignTable({
               Impressões
             </th>
             <th scope="col" className="px-2 py-2 text-right font-medium">
-              {videoView ? "Visualizações" : "Cliques"}
+              {videoView
+                ? "Visualizações"
+                : linkClicks
+                  ? "Cliques no link"
+                  : "Cliques"}
             </th>
             <th scope="col" className="px-2 py-2 text-right font-medium">
-              {videoView ? "CPM" : "CTR"}
+              {videoView ? "CPM" : linkClicks ? "CTR no link" : "CTR"}
             </th>
             <th scope="col" className="px-2 py-2 text-right font-medium">
               Métrica-alvo
@@ -885,10 +932,18 @@ export function CampaignTable({
                 {fmtInt(r.totals.impressions)}
               </td>
               <td className="px-2 py-2 text-right text-ink2">
-                {fmtInt(videoView ? r.totals.views : r.totals.clicks)}
+                {fmtInt(
+                  videoView
+                    ? r.totals.views
+                    : linkClicks
+                      ? r.totals.linkClicks
+                      : r.totals.clicks
+                )}
               </td>
               <td className="px-2 py-2 text-right text-ink2">
-                {videoView ? fmtCost(cpm(r.totals)) : fmtPct(ctr(r.totals))}
+                {videoView
+                  ? fmtCost(cpm(r.totals))
+                  : fmtPct(linkClicks ? linkCtr(r.totals) : ctr(r.totals))}
               </td>
               <td className="px-2 py-2 text-right text-ink2">
                 {fmtInt(r.primary)}{" "}

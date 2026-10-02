@@ -20,7 +20,16 @@ import {
   PageHeader,
   SectionTitle,
 } from "./ui";
-import { cpm, ctr, groupBy, sumRows, vtr } from "@/lib/metrics";
+import {
+  cpc,
+  cpcLink,
+  cpm,
+  ctr,
+  groupBy,
+  linkCtr,
+  sumRows,
+  vtr,
+} from "@/lib/metrics";
 import {
   fmtBRL,
   fmtBRLCompact,
@@ -307,6 +316,9 @@ export function PlatformView({ def }: { def: PlatformDef }) {
     [allRows, def.id]
   );
 
+  // no Meta o contratado em tráfego e tráfego RMKT é o clique no link
+  const linkClicks = def.id === "meta";
+
   const totals = useMemo(() => sumRows(rows), [rows]);
   const series = useMemo(() => objectiveSeries(rows), [rows]);
 
@@ -384,6 +396,7 @@ export function PlatformView({ def }: { def: PlatformDef }) {
           accent={def.color}
           extra={extra}
           items={kpiItems}
+          linkClicks={linkClicks}
         />
 
         <section>
@@ -391,7 +404,11 @@ export function PlatformView({ def }: { def: PlatformDef }) {
             title="Eficiência por objetivo"
             hint="métrica-alvo e custo de cada objetivo"
           />
-          <ObjectiveEfficiency rows={rows} color={def.color} />
+          <ObjectiveEfficiency
+            rows={rows}
+            color={def.color}
+            linkClicks={linkClicks}
+          />
         </section>
 
         <DailyMetricCard
@@ -399,6 +416,7 @@ export function PlatformView({ def }: { def: PlatformDef }) {
           series={series}
           seriesKey={(r) => r.objective}
           title="Evolução diária por objetivo"
+          linkClicks={linkClicks}
         />
 
         <div className="grid gap-3 lg:grid-cols-2">
@@ -413,31 +431,20 @@ export function PlatformView({ def }: { def: PlatformDef }) {
           {def.id !== "tiktok" && totals.impressions > 0 && (
             <Card className="p-3.5 sm:p-4">
               <SectionTitle title="Taxas da plataforma" hint="somando todos os objetivos" />
-              <dl className="grid grid-cols-2 gap-x-3 gap-y-3.5 text-[11px]">
-                <Rate label="CTR" value={fmtPct(ctr(totals))} />
-                <Rate
-                  label="CTR no link"
-                  value={fmtPct(
-                    totals.impressions
-                      ? totals.linkClicks / totals.impressions
-                      : 0
-                  )}
-                />
-                <Rate
-                  label="CPM"
-                  value={fmtCost(
-                    totals.impressions
-                      ? (totals.investment * 1000) / totals.impressions
-                      : NaN
-                  )}
-                />
-                <Rate
-                  label="CPC"
-                  value={fmtCost(
-                    totals.clicks ? totals.investment / totals.clicks : NaN
-                  )}
-                />
-              </dl>
+              {linkClicks ? (
+                <dl className="grid grid-cols-3 gap-x-3 gap-y-3.5 text-[11px]">
+                  <Rate label="CTR no link" value={fmtPct(linkCtr(totals))} />
+                  <Rate label="CPM" value={fmtCost(cpm(totals))} />
+                  <Rate label="CPC no link" value={fmtCost(cpcLink(totals))} />
+                </dl>
+              ) : (
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-3.5 text-[11px]">
+                  <Rate label="CTR" value={fmtPct(ctr(totals))} />
+                  <Rate label="CTR no link" value={fmtPct(linkCtr(totals))} />
+                  <Rate label="CPM" value={fmtCost(cpm(totals))} />
+                  <Rate label="CPC" value={fmtCost(cpc(totals))} />
+                </dl>
+              )}
             </Card>
           )}
         </div>
